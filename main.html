@@ -124,12 +124,12 @@
             color: #f97316;
         }
 
-        .voto-alto {
+        .punteggio-alto {
             color: #10b981;
             font-weight: 600;
         }
 
-        .voto-medio {
+        .punteggio-medio {
             color: #f97316;
             font-weight: 600;
         }
@@ -250,7 +250,7 @@
                     <tr>
                         <th>Giocatore</th>
                         <th>Squadra</th>
-                        <th>Media</th>
+                        <th>Punti</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -295,7 +295,7 @@
         let paginaCorrente = 0;
         const partitePerPagina = 3;
 
-        // ---------- CLASSIFICA GIOCATORI (con media) ----------
+        // ---------- CLASSIFICA GIOCATORI (punteggio totale) ----------
         function caricaGiocatori() {
             supabaseClient
                 .channel('giocatori-channel')
@@ -307,8 +307,8 @@
         async function fetchGiocatori() {
             const { data: giocatori, error } = await supabaseClient
                 .from('giocatori')
-                .select('nome, voto_totale, partite_giocate, squadre!inner(nome)')
-                .order('voto_totale', { ascending: false })
+                .select('nome, punteggio_totale, squadre!inner(nome)')
+                .order('punteggio_totale', { ascending: false })
                 .limit(20);
 
             if (error) {
@@ -318,12 +318,11 @@
 
             let html = '';
             giocatori.forEach(g => {
-                const media = g.partite_giocate > 0 ? (g.voto_totale / g.partite_giocate).toFixed(1) : 0;
-                const classeVoto = media > 80 ? 'voto-alto' : 'voto-medio';
+                const classePunteggio = g.punteggio_totale > 50 ? 'punteggio-alto' : 'punteggio-medio';
                 html += `<tr>
                     <td class="squadra-nome">${g.nome}</td>
                     <td>${g.squadre.nome}</td>
-                    <td class="${classeVoto}">${media}</td>
+                    <td class="${classePunteggio}">${g.punteggio_totale}</td>
                 </tr>`;
             });
             tabellaGiocatori.innerHTML = html;
@@ -397,15 +396,12 @@
                     if (p.premi && p.premi.length > 0) {
                         const { data: giocatore } = await supabaseClient
                             .from('giocatori')
-                            .select('nome, voto_totale, partite_giocate')
+                            .select('nome, punteggio_totale')
                             .eq('id', p.premi[0].giocatore_id)
                             .single();
                         
                         if (giocatore) {
                             p.mvp_nome = giocatore.nome;
-                            p.mvp_media = giocatore.partite_giocate > 0 
-                                ? (giocatore.voto_totale / giocatore.partite_giocate).toFixed(1) 
-                                : 0;
                         }
                     }
                 }
@@ -439,7 +435,7 @@
 
                     let mvpText = '';
                     if (p.mvp_nome) {
-                        mvpText = `<div class="partita-mvp">⭐ MVP: ${p.mvp_nome} <span class="badge">media ${p.mvp_media}</span></div>`;
+                        mvpText = `<div class="partita-mvp">⭐ MVP: ${p.mvp_nome}</div>`;
                     }
 
                     html += `<div class="partita-item">
