@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Finale</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h2>Test Base</h2>
+    
+    <button onclick="test1()">Test 1: Verifica Supabase</button>
+    <button onclick="test2()">Test 2: Inserimento</button>
+    
+    <div id="output" style="margin-top:20px; padding:10px; background:#f0f0f0;"></div>
+
+    <script>
+        // Credenziali
+        const SUPABASE_URL = 'https://svvwbpnthazjxgcntfek.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN2dndicG50aGF6anhnY250ZmVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NzMxNDMsImV4cCI6MjA4ODM0OTE0M30.HNf75JKb2SvfDdrvlKJfxeqtUXxJgBRUYnj5u_M2xfk';
+        
+        // Inizializza subito
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function scrivi(msg) {
+            document.getElementById('output').innerHTML += '<br>' + msg;
+        }
+
+        function test1() {
+            scrivi('🟢 Test 1: Verifico connessione...');
+            scrivi('URL: ' + SUPABASE_URL);
+            scrivi('Key: ' + SUPABASE_ANON_KEY.substring(0, 10) + '...');
+            
+            try {
+                supabase
+                    .from('squadre')
+                    .select('*')
+                    .then(result => {
+                        scrivi('✅ Successo! Dati: ' + JSON.stringify(result.data));
+                        scrivi('✅ Eventuale errore: ' + JSON.stringify(result.error));
+                    })
+                    .catch(err => {
+                        scrivi('❌ Errore promise: ' + err.toString());
+                    });
+            } catch(e) {
+                scrivi('❌ Errore immediato: ' + e.toString());
+            }
+        }
+
+        function test2() {
+            scrivi('🟢 Test 2: Provo a inserire...');
+            
+            supabase
+                .from('squadre')
+                .insert({ nome: 'Test_' + Date.now(), punti: 0, partite_giocate: 0, vinte: 0, perse: 0 })
+                .then(result => {
+                    scrivi('✅ Inserito! Risultato: ' + JSON.stringify(result));
+                })
+                .catch(err => {
+                    scrivi('❌ Errore inserimento: ' + err.toString());
+                });
+        }
+    </script>
+</body>
+</html>
