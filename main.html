@@ -17,9 +17,9 @@
     </header>
 
     <main class="container">
-        <!-- Riquadro Classifica -->
+        <!-- Riquadro Classifica Squadre -->
         <section class="riquadro" id="classifica">
-            <h2>Classifica</h2>
+            <h2>Classifica Squadre</h2>
             <table id="tabellaClassifica">
                 <thead>
                     <tr>
@@ -39,22 +39,35 @@
             <h2>Ultime partite</h2>
             <div id="listaPartite"></div>
         </section>
+
+        <!-- Riquadro Classifica Giocatori -->
+        <section class="riquadro" id="classifica-giocatori">
+            <h2>Classifica Giocatori (voto medio)</h2>
+            <table id="tabellaGiocatori">
+                <thead>
+                    <tr>
+                        <th>Giocatore</th>
+                        <th>Squadra</th>
+                        <th>Voto</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
     </main>
 
     <script>
         // Riferimenti agli elementi
         const classificaBody = document.querySelector('#tabellaClassifica tbody');
         const listaPartiteDiv = document.getElementById('listaPartite');
+        const classificaGiocatoriBody = document.querySelector('#tabellaGiocatori tbody');
 
-        // Funzione per caricare la classifica in tempo reale
+        // Carica classifica squadre in tempo reale
         function caricaClassifica() {
             supabase
                 .channel('squadre-channel')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'squadre' }, payload => {
-                    fetchClassifica();
-                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'squadre' }, () => fetchClassifica())
                 .subscribe();
-
             fetchClassifica();
         }
 
@@ -80,15 +93,12 @@
             }
         }
 
-        // Funzione per caricare le ultime partite in tempo reale
+        // Carica ultime partite in tempo reale
         function caricaPartite() {
             supabase
                 .channel('partite-channel')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'partite' }, payload => {
-                    fetchPartite();
-                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'partite' }, () => fetchPartite())
                 .subscribe();
-
             fetchPartite();
         }
 
@@ -122,9 +132,39 @@
             }
         }
 
+        // Carica classifica giocatori (voto medio)
+        function caricaClassificaGiocatori() {
+            supabase
+                .channel('giocatori-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'giocatori' }, () => fetchGiocatori())
+                .subscribe();
+            fetchGiocatori();
+        }
+
+        async function fetchGiocatori() {
+            const { data: giocatori, error } = await supabase
+                .from('giocatori')
+                .select('nome, voto, squadre!inner(nome)')
+                .order('voto', { ascending: false });
+
+            if (error) console.error(error);
+            else {
+                let html = '';
+                giocatori.forEach(g => {
+                    html += `<tr>
+                        <td>${g.nome}</td>
+                        <td>${g.squadre.nome}</td>
+                        <td>${g.voto !== null ? g.voto : 'N/D'}</td>
+                    </tr>`;
+                });
+                classificaGiocatoriBody.innerHTML = html;
+            }
+        }
+
         // Avvia tutto
         caricaClassifica();
         caricaPartite();
+        caricaClassificaGiocatori();
     </script>
 </body>
 </html>
