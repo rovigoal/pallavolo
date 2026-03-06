@@ -7,12 +7,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <style>
-        .alert-success { background-color: #d4edda; color: #155724; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #c3e6cb; }
-        .alert-error { background-color: #f8d7da; color: #721c24; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #f5c6cb; }
+        .alert-success { background-color: #d4edda; color: #155724; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .alert-error { background-color: #f8d7da; color: #721c24; padding: 10px; margin: 10px 0; border-radius: 5px; }
         .btn-danger { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
         .btn-danger:hover { background-color: #c82333; }
-        .btn-warning { background-color: #ffc107; color: black; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
-        .btn-warning:hover { background-color: #e0a800; }
     </style>
 </head>
 <body>
@@ -22,7 +20,6 @@
     </header>
 
     <main class="container" style="flex-direction: column;">
-        <!-- Protezione con password -->
         <div id="password-protection">
             <h2>Inserisci password</h2>
             <input type="password" id="password-input" placeholder="Password">
@@ -53,7 +50,6 @@
                         <option value="">Seleziona squadra</option>
                     </select>
                     <input type="text" id="ruoloGiocatore" placeholder="Ruolo" required>
-                    <input type="number" id="votoGiocatore" placeholder="Voto (0-99)" min="0" max="99" step="0.1" required>
                     <button type="submit">Aggiungi Giocatore</button>
                 </form>
                 <h3>Elenco Giocatori</h3>
@@ -61,7 +57,7 @@
                 <button class="btn-danger" onclick="eliminaTuttiGiocatori()">Elimina TUTTI i giocatori</button>
             </section>
 
-            <!-- Inserisci risultato partita -->
+            <!-- Inserisci risultato partita CON MIGLIOR GIOCATORE -->
             <section class="riquadro">
                 <h2>Inserisci risultato partita</h2>
                 <form id="formPartita">
@@ -69,10 +65,17 @@
                         <option value="">Squadra casa</option>
                     </select>
                     <input type="number" id="setCasa" min="0" max="3" placeholder="Set casa" required>
+                    
                     <select id="squadraOspite" required>
                         <option value="">Squadra ospite</option>
                     </select>
                     <input type="number" id="setOspite" min="0" max="3" placeholder="Set ospite" required>
+                    
+                    <!-- NUOVO: Selezione miglior giocatore -->
+                    <select id="migliorGiocatore" required>
+                        <option value="">Miglior giocatore della partita</option>
+                    </select>
+                    
                     <button type="submit">Registra partita</button>
                 </form>
                 <h3>Elenco Partite</h3>
@@ -80,27 +83,9 @@
                 <button class="btn-danger" onclick="eliminaTuttePartite()">Elimina TUTTE le partite</button>
             </section>
 
-            <!-- Premia miglior giocatore -->
-            <section class="riquadro">
-                <h2>Premia miglior giocatore</h2>
-                <form id="formPremio">
-                    <select id="partitaPremio" required>
-                        <option value="">Seleziona partita</option>
-                    </select>
-                    <select id="giocatorePremio" required>
-                        <option value="">Seleziona giocatore</option>
-                    </select>
-                    <button type="submit">Assegna premio</button>
-                </form>
-                <h3>Elenco Premi</h3>
-                <ul id="listaPremi"></ul>
-                <button class="btn-danger" onclick="eliminaTuttiPremi()">Elimina TUTTI i premi</button>
-            </section>
-
-            <!-- Pulsante per eliminare TUTTO -->
             <section class="riquadro" style="background-color: #ffe6e6;">
                 <h2 style="color: #dc3545;">Pericolo</h2>
-                <p>Questa operazione cancellerà TUTTI i dati (squadre, giocatori, partite, premi).</p>
+                <p>Questa operazione cancellerà TUTTI i dati.</p>
                 <button class="btn-danger" onclick="eliminaTutto()">ELIMINA TUTTO</button>
             </section>
         </div>
@@ -125,50 +110,58 @@
         }
 
         async function caricaSquadreSelect(selectId) {
-            const { data: squadre, error } = await supabaseClient.from('squadre').select('*');
-            if (error) console.error(error);
-            else {
-                const select = document.getElementById(selectId);
-                select.innerHTML = '<option value="">Seleziona squadra</option>';
-                squadre.forEach(s => {
-                    select.innerHTML += `<option value="${s.id}">${s.nome}</option>`;
-                });
+            const { data: squadre } = await supabaseClient.from('squadre').select('*');
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            select.innerHTML = '<option value="">Seleziona squadra</option>';
+            squadre.forEach(s => {
+                select.innerHTML += `<option value="${s.id}">${s.nome}</option>`;
+            });
+        }
+
+        async function caricaGiocatoriSelect(selectId, squadraId = null) {
+            let query = supabaseClient.from('giocatori').select('id, nome, squadre!inner(nome)');
+            if (squadraId) {
+                query = query.eq('squadra_id', squadraId);
+            }
+            const { data: giocatori } = await query;
+            
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            select.innerHTML = '<option value="">Seleziona giocatore</option>';
+            giocatori.forEach(g => {
+                select.innerHTML += `<option value="${g.id}">${g.nome}</option>`;
+            });
+        }
+
+        // NUOVA: Aggiorna la lista dei giocatori in base alla squadra selezionata
+        function aggiornaMigliorGiocatore() {
+            const squadraCasa = document.getElementById('squadraCasa').value;
+            const squadraOspite = document.getElementById('squadraOspite').value;
+            
+            if (squadraCasa && squadraOspite) {
+                caricaGiocatoriPerMigliore(squadraCasa, squadraOspite);
             }
         }
 
-        async function caricaGiocatoriSelect(selectId) {
-            const { data: giocatori, error } = await supabaseClient
+        async function caricaGiocatoriPerMigliore(squadraCasaId, squadraOspiteId) {
+            const { data: giocatoriCasa } = await supabaseClient
                 .from('giocatori')
-                .select('id, nome, ruolo, squadra_id, squadre!inner(nome)');
-            if (error) console.error(error);
-            else {
-                const select = document.getElementById(selectId);
-                select.innerHTML = '<option value="">Seleziona giocatore</option>';
-                giocatori.forEach(g => {
-                    select.innerHTML += `<option value="${g.id}">${g.nome} (${g.ruolo} - ${g.squadre.nome})</option>`;
-                });
-            }
-        }
-
-        async function caricaPartiteSelect() {
-            const { data: partite, error } = await supabaseClient
-                .from('partite')
-                .select(`
-                    id,
-                    set_casa,
-                    set_ospite,
-                    squadre!squadra_casa_id (nome),
-                    squadre!squadra_ospite_id (nome)
-                `)
-                .order('data', { ascending: false });
-            if (error) console.error(error);
-            else {
-                const select = document.getElementById('partitaPremio');
-                select.innerHTML = '<option value="">Seleziona partita</option>';
-                partite.forEach(p => {
-                    select.innerHTML += `<option value="${p.id}">${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome} (${p.set_casa}-${p.set_ospite})</option>`;
-                });
-            }
+                .select('id, nome')
+                .eq('squadra_id', squadraCasaId);
+                
+            const { data: giocatoriOspite } = await supabaseClient
+                .from('giocatori')
+                .select('id, nome')
+                .eq('squadra_id', squadraOspiteId);
+            
+            const tutti = [...(giocatoriCasa || []), ...(giocatoriOspite || [])];
+            
+            const select = document.getElementById('migliorGiocatore');
+            select.innerHTML = '<option value="">Miglior giocatore</option>';
+            tutti.forEach(g => {
+                select.innerHTML += `<option value="${g.id}">${g.nome}</option>`;
+            });
         }
 
         async function aggiornaListaSquadre() {
@@ -181,9 +174,9 @@
         async function aggiornaListaGiocatori() {
             const { data: giocatori } = await supabaseClient
                 .from('giocatori')
-                .select('id, nome, ruolo, voto, squadre!inner(nome)');
+                .select('id, nome, ruolo, squadre!inner(nome)');
             let html = '';
-            giocatori.forEach(g => html += `<li>${g.nome} - ${g.ruolo} - Voto: ${g.voto} (${g.squadre.nome}) <button class="btn-danger" onclick="eliminaGiocatore('${g.id}')">Elimina</button></li>`);
+            giocatori.forEach(g => html += `<li>${g.nome} - ${g.ruolo} (${g.squadre.nome}) <button class="btn-danger" onclick="eliminaGiocatore('${g.id}')">Elimina</button></li>`);
             document.getElementById('listaGiocatori').innerHTML = html;
         }
 
@@ -196,20 +189,8 @@
             document.getElementById('listaPartite').innerHTML = html;
         }
 
-        async function aggiornaListaPremi() {
-            const { data: premi } = await supabaseClient
-                .from('premi')
-                .select('id, partita_id, giocatore_id, giocatori!inner(nome), partite!inner(squadre!squadra_casa_id(nome), squadre!squadra_ospite_id(nome))');
-            let html = '';
-            premi.forEach(p => {
-                const partita = p.partite;
-                html += `<li>Miglior giocatore: ${p.giocatori.nome} (partita: ${partita.squadre_casa_id.nome} vs ${partita.squadre_ospite_id.nome}) <button class="btn-danger" onclick="eliminaPremio('${p.id}')">Elimina</button></li>`;
-            });
-            document.getElementById('listaPremi').innerHTML = html;
-        }
-
         window.eliminaSquadra = async (id) => {
-            if (confirm('Sicuro di voler eliminare questa squadra?')) {
+            if (confirm('Sicuro?')) {
                 await supabaseClient.from('squadre').delete().eq('id', id);
                 aggiornaListaSquadre();
                 caricaSquadreSelect('squadraGiocatore');
@@ -220,28 +201,18 @@
         };
 
         window.eliminaGiocatore = async (id) => {
-            if (confirm('Sicuro di voler eliminare questo giocatore?')) {
+            if (confirm('Sicuro?')) {
                 await supabaseClient.from('giocatori').delete().eq('id', id);
                 aggiornaListaGiocatori();
-                caricaGiocatoriSelect('giocatorePremio');
                 mostraMessaggio('Giocatore eliminato!');
             }
         };
 
         window.eliminaPartita = async (id) => {
-            if (confirm('Sicuro di voler eliminare questa partita?')) {
+            if (confirm('Sicuro?')) {
                 await supabaseClient.from('partite').delete().eq('id', id);
                 aggiornaListaPartite();
-                caricaPartiteSelect();
                 mostraMessaggio('Partita eliminata!');
-            }
-        };
-
-        window.eliminaPremio = async (id) => {
-            if (confirm('Sicuro di voler eliminare questo premio?')) {
-                await supabaseClient.from('premi').delete().eq('id', id);
-                aggiornaListaPremi();
-                mostraMessaggio('Premio eliminato!');
             }
         };
 
@@ -251,12 +222,9 @@
                 aggiornaListaSquadre();
                 aggiornaListaGiocatori();
                 aggiornaListaPartite();
-                aggiornaListaPremi();
                 caricaSquadreSelect('squadraGiocatore');
                 caricaSquadreSelect('squadraCasa');
                 caricaSquadreSelect('squadraOspite');
-                caricaGiocatoriSelect('giocatorePremio');
-                caricaPartiteSelect();
                 mostraMessaggio('Tutte le squadre eliminate!');
             }
         };
@@ -265,7 +233,6 @@
             if (confirm('ELIMINARE TUTTI I GIOCATORI?')) {
                 await supabaseClient.from('giocatori').delete().neq('id', '00000000-0000-0000-0000-000000000000');
                 aggiornaListaGiocatori();
-                caricaGiocatoriSelect('giocatorePremio');
                 mostraMessaggio('Tutti i giocatori eliminati!');
             }
         };
@@ -274,21 +241,12 @@
             if (confirm('ELIMINARE TUTTE LE PARTITE?')) {
                 await supabaseClient.from('partite').delete().neq('id', '00000000-0000-0000-0000-000000000000');
                 aggiornaListaPartite();
-                caricaPartiteSelect();
                 mostraMessaggio('Tutte le partite eliminate!');
             }
         };
 
-        window.eliminaTuttiPremi = async () => {
-            if (confirm('ELIMINARE TUTTI I PREMI?')) {
-                await supabaseClient.from('premi').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                aggiornaListaPremi();
-                mostraMessaggio('Tutti i premi eliminati!');
-            }
-        };
-
         window.eliminaTutto = async () => {
-            if (confirm('⚠️ STAI PER ELIMINARE TUTTI I DATI. SEI SICURO?')) {
+            if (confirm('⚠️ ELIMINARE TUTTO?')) {
                 await supabaseClient.from('premi').delete().neq('id', '00000000-0000-0000-0000-000000000000');
                 await supabaseClient.from('partite').delete().neq('id', '00000000-0000-0000-0000-000000000000');
                 await supabaseClient.from('giocatori').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -296,13 +254,10 @@
                 aggiornaListaSquadre();
                 aggiornaListaGiocatori();
                 aggiornaListaPartite();
-                aggiornaListaPremi();
                 caricaSquadreSelect('squadraGiocatore');
                 caricaSquadreSelect('squadraCasa');
                 caricaSquadreSelect('squadraOspite');
-                caricaGiocatoriSelect('giocatorePremio');
-                caricaPartiteSelect();
-                mostraMessaggio('Tutti i dati sono stati cancellati!');
+                mostraMessaggio('Tutti i dati cancellati!');
             }
         };
 
@@ -310,12 +265,13 @@
             caricaSquadreSelect('squadraGiocatore');
             caricaSquadreSelect('squadraCasa');
             caricaSquadreSelect('squadraOspite');
-            caricaGiocatoriSelect('giocatorePremio');
-            caricaPartiteSelect();
             aggiornaListaSquadre();
             aggiornaListaGiocatori();
             aggiornaListaPartite();
-            aggiornaListaPremi();
+
+            // Event listeners per aggiornare i giocatori quando cambiano le squadre
+            document.getElementById('squadraCasa').addEventListener('change', aggiornaMigliorGiocatore);
+            document.getElementById('squadraOspite').addEventListener('change', aggiornaMigliorGiocatore);
 
             document.getElementById('formSquadra').addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -326,7 +282,7 @@
                 caricaSquadreSelect('squadraGiocatore');
                 caricaSquadreSelect('squadraCasa');
                 caricaSquadreSelect('squadraOspite');
-                mostraMessaggio('Squadra aggiunta con successo!');
+                mostraMessaggio('Squadra aggiunta!');
             });
 
             document.getElementById('formGiocatore').addEventListener('submit', async (e) => {
@@ -334,14 +290,11 @@
                 const nome = document.getElementById('nomeGiocatore').value;
                 const squadraId = document.getElementById('squadraGiocatore').value;
                 const ruolo = document.getElementById('ruoloGiocatore').value;
-                const voto = parseFloat(document.getElementById('votoGiocatore').value);
-                await supabaseClient.from('giocatori').insert({ nome, squadra_id: squadraId, ruolo, voto });
+                await supabaseClient.from('giocatori').insert({ nome, squadra_id: squadraId, ruolo });
                 document.getElementById('nomeGiocatore').value = '';
                 document.getElementById('ruoloGiocatore').value = '';
-                document.getElementById('votoGiocatore').value = '';
                 aggiornaListaGiocatori();
-                caricaGiocatoriSelect('giocatorePremio');
-                mostraMessaggio('Giocatore aggiunto con successo!');
+                mostraMessaggio('Giocatore aggiunto!');
             });
 
             document.getElementById('formPartita').addEventListener('submit', async (e) => {
@@ -350,12 +303,19 @@
                 const ospiteId = document.getElementById('squadraOspite').value;
                 const setCasa = parseInt(document.getElementById('setCasa').value);
                 const setOspite = parseInt(document.getElementById('setOspite').value);
+                const migliorGiocatoreId = document.getElementById('migliorGiocatore').value;
 
                 if (casaId === ospiteId) {
                     alert('Le squadre devono essere diverse');
                     return;
                 }
 
+                if (!migliorGiocatoreId) {
+                    alert('Seleziona il miglior giocatore');
+                    return;
+                }
+
+                // Calcolo punti
                 let puntiCasa, puntiOspite;
                 if (setCasa > setOspite) {
                     if (setCasa === 3 && (setOspite === 0 || setOspite === 1)) {
@@ -380,28 +340,37 @@
                     return;
                 }
 
-                const { error } = await supabaseClient.from('partite').insert({
+                // Inserisci partita
+                const { data: partita, error } = await supabaseClient.from('partite').insert({
                     squadra_casa_id: casaId,
                     squadra_ospite_id: ospiteId,
                     set_casa: setCasa,
                     set_ospite: setOspite,
                     data: new Date()
-                });
+                }).select();
 
                 if (error) {
                     alert('Errore nel salvare la partita');
-                    console.error(error);
                     return;
                 }
 
+                // Inserisci premio miglior giocatore
+                const partitaId = partita[0].id;
+                await supabaseClient.from('premi').insert({
+                    partita_id: partitaId,
+                    giocatore_id: migliorGiocatoreId,
+                    data: new Date()
+                });
+
+                // Aggiorna statistiche squadre
                 await aggiornaStatisticheSquadra(casaId, puntiCasa, setCasa > setOspite);
                 await aggiornaStatisticheSquadra(ospiteId, puntiOspite, setOspite > setCasa);
 
                 document.getElementById('setCasa').value = '';
                 document.getElementById('setOspite').value = '';
+                document.getElementById('migliorGiocatore').innerHTML = '<option value="">Miglior giocatore</option>';
                 aggiornaListaPartite();
-                caricaPartiteSelect();
-                mostraMessaggio('Partita registrata e classifica aggiornata!');
+                mostraMessaggio('Partita registrata con miglior giocatore!');
             });
 
             async function aggiornaStatisticheSquadra(squadraId, punti, vinta) {
@@ -414,19 +383,6 @@
                 };
                 await supabaseClient.from('squadre').update(nuoveStat).eq('id', squadraId);
             }
-
-            document.getElementById('formPremio').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const partitaId = document.getElementById('partitaPremio').value;
-                const giocatoreId = document.getElementById('giocatorePremio').value;
-                await supabaseClient.from('premi').insert({
-                    partita_id: partitaId,
-                    giocatore_id: giocatoreId,
-                    data: new Date()
-                });
-                aggiornaListaPremi();
-                mostraMessaggio('Premio assegnato con successo!');
-            });
         }
     </script>
 </body>
