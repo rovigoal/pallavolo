@@ -81,6 +81,9 @@
             text-align: center;
             max-width: 400px;
             margin: 50px auto;
+            position: relative;
+            z-index: 100;
+            background: white;
         }
         #password-protection input {
             width: 80%;
@@ -90,6 +93,8 @@
         #password-protection button {
             width: 200px;
             margin: 10px auto;
+            cursor: pointer;
+            pointer-events: auto;
         }
     </style>
 </head>
@@ -104,7 +109,7 @@
         <div id="password-protection" class="riquadro">
             <h2>Inserisci password</h2>
             <input type="password" id="password-input" placeholder="Password">
-            <button onclick="verificaPassword()">Accedi</button>
+            <button id="login-button">Accedi</button>
         </div>
 
         <div id="admin-content" style="display: none;">
@@ -183,19 +188,29 @@
             setTimeout(() => { box.innerHTML = ''; }, 4000);
         }
 
-        // Verifica password
+        // Verifica password (chiamata dall'event listener)
         function verificaPassword() {
             const psw = document.getElementById('password-input').value;
             if (psw === '123') {
                 document.getElementById('password-protection').style.display = 'none';
                 document.getElementById('admin-content').style.display = 'block';
-                // Avvia il caricamento dei dati
                 caricaDatiAdmin();
                 mostraMessaggio('✅ Login effettuato');
             } else {
                 alert('Password errata!');
             }
         }
+
+        // Listener per il pulsante di login (garantisce la clickabilità)
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginBtn = document.getElementById('login-button');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    verificaPassword();
+                });
+            }
+        });
 
         // Variabili globali
         let squadre = [];
@@ -228,24 +243,30 @@
         function aggiornaSelect() {
             // Squadra Giocatore
             let selectSG = document.getElementById('squadraGiocatore');
-            selectSG.innerHTML = '<option value="">Seleziona squadra</option>';
-            squadre.forEach(s => {
-                selectSG.innerHTML += `<option value="${s.id}">${s.nome}</option>`;
-            });
+            if (selectSG) {
+                selectSG.innerHTML = '<option value="">Seleziona squadra</option>';
+                squadre.forEach(s => {
+                    selectSG.innerHTML += `<option value="${s.id}">${s.nome}</option>`;
+                });
+            }
 
             // Squadra Casa
             let selectSC = document.getElementById('squadraCasa');
-            selectSC.innerHTML = '<option value="">Squadra casa</option>';
-            squadre.forEach(s => {
-                selectSC.innerHTML += `<option value="${s.id}">${s.nome}</option>`;
-            });
+            if (selectSC) {
+                selectSC.innerHTML = '<option value="">Squadra casa</option>';
+                squadre.forEach(s => {
+                    selectSC.innerHTML += `<option value="${s.id}">${s.nome}</option>`;
+                });
+            }
 
             // Squadra Ospite
             let selectSO = document.getElementById('squadraOspite');
-            selectSO.innerHTML = '<option value="">Squadra ospite</option>';
-            squadre.forEach(s => {
-                selectSO.innerHTML += `<option value="${s.id}">${s.nome}</option>`;
-            });
+            if (selectSO) {
+                selectSO.innerHTML = '<option value="">Squadra ospite</option>';
+                squadre.forEach(s => {
+                    selectSO.innerHTML += `<option value="${s.id}">${s.nome}</option>`;
+                });
+            }
         }
 
         // Aggiorna la lista dei migliori giocatori in base alle squadre selezionate
@@ -260,6 +281,7 @@
             );
             
             const select = document.getElementById('migliorGiocatore');
+            if (!select) return;
             select.innerHTML = '<option value="">Miglior giocatore</option>';
             giocatoriFiltrati.forEach(g => {
                 select.innerHTML += `<option value="${g.id}">${g.nome} (voto: ${g.voto})</option>`;
@@ -490,4 +512,44 @@
                 await caricaSquadre();
                 await caricaGiocatori();
                 aggiornaListe();
-                mostraMessaggio('✅ Tutte le squadre elimin
+                mostraMessaggio('✅ Tutte le squadre eliminate!');
+            }
+        };
+
+        window.eliminaTuttiGiocatori = async () => {
+            if (confirm('ELIMINARE TUTTI I GIOCATORI?')) {
+                await supabaseClient.from('giocatori').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                await caricaGiocatori();
+                aggiornaListaGiocatori();
+                mostraMessaggio('✅ Tutti i giocatori eliminati!');
+            }
+        };
+
+        window.eliminaTuttePartite = async () => {
+            if (confirm('ELIMINARE TUTTE LE PARTITE?')) {
+                await supabaseClient.from('premi').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                await supabaseClient.from('partite').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                aggiornaListaPartite();
+                mostraMessaggio('✅ Tutte le partite eliminate!');
+            }
+        };
+
+        window.eliminaTutto = async () => {
+            if (confirm('ELIMINARE TUTTO?')) {
+                await supabaseClient.from('premi').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                await supabaseClient.from('partite').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                await supabaseClient.from('giocatori').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                await supabaseClient.from('squadre').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                await caricaSquadre();
+                await caricaGiocatori();
+                aggiornaListe();
+                mostraMessaggio('✅ Tutto eliminato!');
+            }
+        };
+
+        // Event listeners per aggiornare il select del miglior giocatore
+        document.getElementById('squadraCasa').addEventListener('change', aggiornaMigliorGiocatore);
+        document.getElementById('squadraOspite').addEventListener('change', aggiornaMigliorGiocatore);
+    </script>
+</body>
+</html>
