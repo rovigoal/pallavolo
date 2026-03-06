@@ -15,25 +15,21 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Inter', sans-serif;
             background: #f1f5f9;
             color: #1e293b;
         }
-
         header {
             background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
             color: white;
             padding: 1.5rem 2rem;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
-
         header h1 {
             font-size: 2rem;
             font-weight: 600;
         }
-
         nav a {
             color: #f97316;
             text-decoration: none;
@@ -41,22 +37,21 @@
             margin-top: 0.5rem;
             display: inline-block;
         }
-
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 2rem auto;
             padding: 0 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
         }
-
         .card {
             background: white;
             border-radius: 20px;
             padding: 1.8rem;
-            margin-bottom: 2rem;
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
             border: 1px solid #e2e8f0;
         }
-
         .card h2 {
             font-size: 1.5rem;
             color: #f97316;
@@ -64,20 +59,17 @@
             border-bottom: 2px solid #f97316;
             padding-bottom: 0.5rem;
         }
-
         .card h3 {
             font-size: 1.1rem;
             color: #334155;
             margin: 1.2rem 0 0.8rem;
         }
-
         form {
             display: flex;
             flex-wrap: wrap;
             gap: 0.8rem;
             margin-bottom: 1.5rem;
         }
-
         input, select, button {
             padding: 0.7rem 1rem;
             border: 1px solid #cbd5e1;
@@ -87,12 +79,10 @@
             outline: none;
             transition: 0.15s;
         }
-
         input:focus, select:focus {
             border-color: #f97316;
             box-shadow: 0 0 0 3px rgba(249,115,22,0.1);
         }
-
         button {
             background: #f97316;
             color: white;
@@ -101,72 +91,68 @@
             cursor: pointer;
             padding: 0.7rem 1.5rem;
         }
-
         button:hover {
             background: #ea580c;
         }
-
         .btn-danger {
             background: #dc2626;
         }
-
         .btn-danger:hover {
             background: #b91c1c;
         }
-
         .btn-small {
             padding: 0.3rem 0.8rem;
             font-size: 0.8rem;
             margin-left: 0.5rem;
         }
-
         ul {
             list-style: none;
             margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.5rem;
         }
-
         li {
             background: #f8fafc;
             padding: 0.8rem 1rem;
-            border-radius: 12px;
+            border-radius: 8px;
             margin-bottom: 0.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-left: 4px solid #f97316;
         }
-
         .alert-success {
             background: #d1fae5;
             color: #065f46;
             padding: 1rem;
             border-radius: 12px;
             margin-bottom: 1rem;
-            border: 1px solid #a7f3d0;
         }
-
         .alert-error {
             background: #fee2e2;
             color: #991b1b;
             padding: 1rem;
             border-radius: 12px;
             margin-bottom: 1rem;
-            border: 1px solid #fecaca;
         }
-
         #password-protection {
             max-width: 400px;
             margin: 4rem auto;
             text-align: center;
+            grid-column: 1 / -1;
         }
-
         #password-protection input {
             width: 100%;
             margin: 1rem 0;
         }
-
         #password-protection button {
             width: 100%;
+        }
+        .full-width {
+            grid-column: 1 / -1;
         }
     </style>
 </head>
@@ -176,7 +162,7 @@
         <nav><a href="main.html">← Torna alla Home</a></nav>
     </header>
 
-    <main class="container">
+    <main>
         <!-- Login -->
         <div id="password-protection" class="card">
             <h2>Accesso Admin</h2>
@@ -184,24 +170,25 @@
             <button id="login-button" onclick="verificaPassword()">Accedi</button>
         </div>
 
-        <div id="admin-content" style="display: none;">
-            <div id="messageBox"></div>
+        <div id="admin-content" style="display: none;" class="container">
+            <div id="messageBox" class="full-width"></div>
 
-            <!-- Gestione Squadre -->
-            <section class="card">
-                <h2>🏐 Gestione Squadre</h2>
+            <!-- Sezione 1: Squadre e Giocatori -->
+            <div class="card">
+                <h2>🏐 Squadre e Giocatori</h2>
+                
+                <!-- Gestione Squadre -->
+                <h3>Aggiungi Squadra</h3>
                 <form id="formSquadra" onsubmit="return false;">
                     <input type="text" id="nomeSquadra" placeholder="Nome squadra" required style="flex: 1;">
-                    <button type="button" onclick="aggiungiSquadra()">Aggiungi Squadra</button>
+                    <button type="button" onclick="aggiungiSquadra()">Aggiungi</button>
                 </form>
                 <h3>Elenco Squadre</h3>
                 <ul id="listaSquadre"></ul>
                 <button class="btn-danger" onclick="eliminaTutteSquadre()">🗑️ Elimina TUTTE le squadre</button>
-            </section>
 
-            <!-- Gestione Giocatori -->
-            <section class="card">
-                <h2>👤 Gestione Giocatori</h2>
+                <!-- Gestione Giocatori -->
+                <h3 style="margin-top: 2rem;">Aggiungi Giocatore</h3>
                 <form id="formGiocatore" onsubmit="return false;">
                     <input type="text" id="nomeGiocatore" placeholder="Nome giocatore" required style="flex: 1;">
                     <select id="squadraGiocatore" required style="min-width: 150px;">
@@ -212,48 +199,51 @@
                 <h3>Elenco Giocatori</h3>
                 <ul id="listaGiocatori"></ul>
                 <button class="btn-danger" onclick="eliminaTuttiGiocatori()">🗑️ Elimina TUTTI i giocatori</button>
-            </section>
+            </div>
 
-            <!-- Inserisci partita -->
-            <section class="card">
-                <h2>📊 Inserisci risultato partita</h2>
+            <!-- Sezione 2: Partite -->
+            <div class="card">
+                <h2>📊 Partite</h2>
+                
+                <!-- Inserimento partita -->
+                <h3>Inserisci risultato</h3>
                 <form id="formPartita" onsubmit="return false;">
-                    <select id="squadraCasa" required style="min-width: 160px;">
+                    <select id="squadraCasa" required style="min-width: 140px;">
                         <option value="">Squadra casa</option>
                     </select>
-                    <input type="number" id="setCasa" min="0" max="3" placeholder="Set casa" required style="width: 100px;">
+                    <input type="number" id="setCasa" min="0" max="3" placeholder="Set casa" required style="width: 90px;">
                     
-                    <select id="squadraOspite" required style="min-width: 160px;">
+                    <select id="squadraOspite" required style="min-width: 140px;">
                         <option value="">Squadra ospite</option>
                     </select>
-                    <input type="number" id="setOspite" min="0" max="3" placeholder="Set ospite" required style="width: 100px;">
+                    <input type="number" id="setOspite" min="0" max="3" placeholder="Set ospite" required style="width: 90px;">
                     
-                    <select id="migliorGiocatore" required style="min-width: 200px;">
+                    <select id="migliorGiocatore" required style="min-width: 180px;">
                         <option value="">Miglior giocatore</option>
                     </select>
                     
-                    <input type="number" id="punteggioMigliore" placeholder="Punteggio (0-99)" min="0" max="99" step="1" required style="width: 120px;">
+                    <input type="number" id="punteggioMigliore" placeholder="Punteggio (0-99)" min="0" max="99" step="1" required style="width: 110px;">
                     
                     <button type="button" onclick="aggiungiPartita()">Registra</button>
                 </form>
-                <h3>Elenco Partite</h3>
+
+                <!-- Lista partite con eliminazione singola -->
+                <h3>Partite registrate</h3>
                 <ul id="listaPartite"></ul>
                 <button class="btn-danger" onclick="eliminaTuttePartite()">🗑️ Elimina TUTTE le partite</button>
-            </section>
+            </div>
 
-            <!-- Pericolo -->
-            <section class="card" style="background-color: #fff1f0; border-color: #dc2626;">
+            <!-- Pulsante per eliminare TUTTO (opzionale, lo mettiamo sotto) -->
+            <div class="card full-width" style="background-color: #fff1f0; border-color: #dc2626;">
                 <h2 style="color: #dc2626;">⚠️ Pericolo</h2>
                 <p>Questa operazione cancellerà TUTTI i dati (squadre, giocatori, partite, premi).</p>
                 <button class="btn-danger" onclick="eliminaTutto()">🔥 ELIMINA TUTTO 🔥</button>
-            </section>
+            </div>
         </div>
     </main>
 
     <script>
-        // ----------------------------------------------
         // Funzioni di utilità
-        // ----------------------------------------------
         function mostraMessaggio(testo, tipo = 'success') {
             const box = document.getElementById('messageBox');
             if (!box) return;
@@ -261,14 +251,12 @@
             setTimeout(() => { box.innerHTML = ''; }, 4000);
         }
 
-        // ----------------------------------------------
         // Login
-        // ----------------------------------------------
         function verificaPassword() {
             const psw = document.getElementById('password-input').value;
             if (psw === '123') {
                 document.getElementById('password-protection').style.display = 'none';
-                document.getElementById('admin-content').style.display = 'block';
+                document.getElementById('admin-content').style.display = 'grid';
                 caricaDatiAdmin();
                 mostraMessaggio('✅ Login effettuato');
             } else {
@@ -286,9 +274,7 @@
             }
         });
 
-        // ----------------------------------------------
         // Variabili globali
-        // ----------------------------------------------
         let squadre = [];
         let giocatori = [];
 
@@ -308,9 +294,7 @@
             giocatori = data || [];
         }
 
-        // ----------------------------------------------
         // Aggiornamento UI
-        // ----------------------------------------------
         async function aggiornaListe() {
             await Promise.all([
                 aggiornaListaSquadre(),
@@ -359,9 +343,7 @@
             });
         }
 
-        // ----------------------------------------------
         // Operazioni CRUD
-        // ----------------------------------------------
         async function aggiungiSquadra() {
             const nome = document.getElementById('nomeSquadra').value.trim();
             if (!nome) {
@@ -465,7 +447,7 @@
                     });
                 if (errPremio) throw errPremio;
 
-                // 3. Aggiorna punteggio totale del giocatore (SOMMA)
+                // 3. Aggiorna punteggio totale del giocatore
                 const { data: giocatore, error: errGiocatore } = await supabaseClient
                     .from('giocatori')
                     .select('punteggio_totale')
@@ -518,9 +500,7 @@
             }).eq('id', squadraId);
         }
 
-        // ----------------------------------------------
-        // Funzioni di aggiornamento liste
-        // ----------------------------------------------
+        // Aggiornamento liste
         async function aggiornaListaSquadre() {
             const { data } = await supabaseClient.from('squadre').select('*');
             let html = '';
@@ -563,9 +543,7 @@
             document.getElementById('listaPartite').innerHTML = html;
         }
 
-        // ----------------------------------------------
         // Eliminazioni
-        // ----------------------------------------------
         window.eliminaSquadra = async (id) => {
             if (!confirm('Sicuro di voler eliminare questa squadra?')) return;
             try {
@@ -594,13 +572,10 @@
         window.eliminaPartita = async (id) => {
             if (!confirm('Sicuro di voler eliminare questa partita?')) return;
             try {
-                console.log('Eliminazione partita con id:', id);
-                const { error } = await supabaseClient.from('partite').delete().eq('id', id);
-                if (error) throw error;
+                await supabaseClient.from('partite').delete().eq('id', id);
                 await aggiornaListe();
                 mostraMessaggio('✅ Partita eliminata!');
             } catch (error) {
-                console.error('Errore eliminazione partita:', error);
                 mostraMessaggio('❌ Errore: ' + error.message, 'error');
             }
         };
@@ -661,9 +636,7 @@
             }
         };
 
-        // ----------------------------------------------
         // Event listeners
-        // ----------------------------------------------
         document.getElementById('squadraCasa')?.addEventListener('change', aggiornaMigliorGiocatore);
         document.getElementById('squadraOspite')?.addEventListener('change', aggiornaMigliorGiocatore);
     </script>
