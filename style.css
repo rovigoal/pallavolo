@@ -231,6 +231,224 @@ body {
 }
 
 header {
+    background-color: #f97316; /* arancione */
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    font-size: 2.5rem;
+    letter-spacing: 2px;
+}
+
+nav {
+    margin-top: 1rem;
+}
+
+nav a {
+    color: white;
+    margin: 0 1rem;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    transition: background-color 0.3s;
+}
+
+nav a:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+.container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    justify-content: center;
+}
+
+.riquadro {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    flex: 1 1 400px;
+    border-top: 8px solid #f97316;
+    transition: transform 0.3s;
+}
+
+.riquadro:hover {
+    transform: translateY(-5px);
+}
+
+.riquadro h2 {
+    color: #f97316;
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    border-bottom: 3px solid #f97316;
+    display: inline-block;
+    padding-bottom: 0.3rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f97316;
+    color: white;
+    font-weight: 600;
+}
+
+tr:hover {
+    background-color: #fff5e6;
+}
+
+.partita {
+    background: #f8f9fa;
+    border-left: 5px solid #f97316;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 10px;
+}
+
+.landing {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: url('https://images.unsplash.com/photo-1612872087720-bb5e9f0c6b6f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80') center/cover no-repeat;
+    color: white;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+}
+
+.landing h1 {
+    font-size: 4rem;
+    text-align: center;
+    background: rgba(0,0,0,0.5);
+    padding: 1rem 2rem;
+    border-radius: 60px;
+}
+
+.entra-btn {
+    background: #f97316;
+    color: white;
+    padding: 1.2rem 3rem;
+    font-size: 2rem;
+    border: none;
+    border-radius: 60px;
+    text-decoration: none;
+    margin-top: 2rem;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.entra-btn:hover {
+    background: #fb923c;
+    transform: scale(1.1);
+}
+
+form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin: 1.5rem 0;
+}
+
+form input, form select, form button {
+    padding: 0.8rem 1.2rem;
+    border: 1px solid #ccc;
+    border-radius: 30px;
+    font-size: 1rem;
+    outline: none;
+    transition: border 0.3s;
+}
+
+form input:focus, form select:focus {
+    border-color: #f97316;
+}
+
+form button {
+    background: #f97316;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.8rem 2rem;
+}
+
+form button:hover {
+    background: #e65c00;
+}
+
+ul {
+    list-style-type: none;
+    margin-top: 1rem;
+}
+
+ul li {
+    background: #f8f9fa;
+    margin: 0.5rem 0;
+    padding: 0.8rem;
+    border-radius: 10px;
+    border-left: 4px solid #f97316;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#password-protection {
+    text-align: center;
+    background: white;
+    padding: 3rem;
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    max-width: 400px;
+    margin: 5rem auto;
+}
+
+#password-protection input {
+    width: 80%;
+    margin: 1rem auto;
+    display: block;
+}
+
+#password-protection button {
+    background: #f97316;
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1.2rem;
+}/* style.css */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(145deg, #f0f4f8 0%, #d9e2ec 100%);
+    min-height: 100vh;
+    color: #102a43;
+}
+
+header {
     background-color: #f97316;
     color: white;
     padding: 1.5rem;
