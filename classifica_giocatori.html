@@ -46,11 +46,19 @@
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function loadClassifica() {
+            // Ottieni tutti i giocatori con il nome della squadra
             const { data: giocatori, error: errG } = await supabaseClient
                 .from('giocatori')
-                .select('id, nome, cognome, squadre(nome)');
+                .select('id, nome, cognome, squadra_id');
             if (errG) return console.error(errG);
 
+            // Ottieni squadre per mappa
+            const { data: squadre, error: errS } = await supabaseClient.from('squadre').select('id, nome');
+            if (errS) return console.error(errS);
+            const squadreMap = {};
+            squadre.forEach(s => squadreMap[s.id] = s.nome);
+
+            // Ottieni partite per sommare punti
             const { data: partite, error: errP } = await supabaseClient
                 .from('partite')
                 .select('miglior_giocatore_id, punti_miglior_giocatore');
@@ -67,7 +75,7 @@
 
             const classifica = giocatori.map(g => ({
                 nomeCompleto: `${g.nome} ${g.cognome}`,
-                squadra: g.squadre ? g.squadre.nome : '—',
+                squadra: squadreMap[g.squadra_id] || '—',
                 punti: puntiMap[g.id] || 0
             })).sort((a,b) => b.punti - a.punti);
 
