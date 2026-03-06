@@ -57,13 +57,13 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 2rem auto;
             padding: 0 2rem;
             display: grid;
-            grid-template-columns: 1fr 1.8fr 1fr;
-            gap: 1.8rem;
-            align-items: start;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            justify-content: center;
         }
 
         .card {
@@ -136,26 +136,9 @@
             font-weight: 600;
         }
 
-        .ultimi-risultati {
-            text-align: center;
-            font-size: 1.2rem;
-            padding: 1rem;
-            background: #f97316;
-            color: white;
-            border-radius: 16px;
-            margin-top: 1rem;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .ultimi-risultati:hover {
-            background: #ea580c;
-        }
-
-        @media (max-width: 1000px) {
+        @media (max-width: 800px) {
             .container {
                 grid-template-columns: 1fr;
-                gap: 1.5rem;
             }
         }
     </style>
@@ -187,7 +170,7 @@
             </table>
         </div>
 
-        <!-- COLONNA CENTRALE: Classifica Squadre -->
+        <!-- COLONNA DESTRA: Classifica Squadre -->
         <div class="card">
             <h2>📊 Classifica Squadre</h2>
             <table id="tabellaClassifica">
@@ -201,14 +184,6 @@
                 </thead>
                 <tbody></tbody>
             </table>
-        </div>
-
-        <!-- COLONNA DESTRA: Link a Ultimi Risultati -->
-        <div class="card" onclick="window.location.href='partite.html'">
-            <h2>⚡ Ultimi risultati</h2>
-            <div class="ultimi-risultati">
-                Clicca per vedere tutte le partite →
-            </div>
         </div>
     </div>
 
