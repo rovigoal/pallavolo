@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Rovigol Pallavolo</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Area Admin</h1>
+        <nav><a href="main.html">Torna alla Home</a></nav>
+    </header>
+
+    <main class="container" style="flex-direction: column;">
+        <!-- Protezione con password -->
+        <div id="password-protection">
+            <h2>Inserisci password</h2>
+            <input type="password" id="password-input" placeholder="Password">
+            <button onclick="verificaPassword()">Accedi</button>
+        </div>
+
+        <div id="admin-content" style="display: none;">
+            <!-- Gestione Squadre -->
+            <section class="riquadro">
+                <h2>Gestione Squadre</h2>
+                <form id="formSquadra">
+                    <input type="text" id="nomeSquadra" placeholder="Nome squadra" required>
+                    <button type="submit">Aggiungi Squadra</button>
+                </form>
+                <ul id="listaSquadre"></ul>
+            </section>
+
+            <!-- Gestione Giocatori -->
+            <section class="riquadro">
+                <h2>Gestione Giocatori</h2>
+                <form id="formGiocatore">
+                    <input type="text" id="nomeGiocatore" placeholder="Nome giocatore" required>
+                    <select id="squadraGiocatore" required>
+                        <option value="">Seleziona squadra</option>
+                    </select>
+                    <input type="text" id="ruoloGiocatore" placeholder="Ruolo" required>
+                    <button type="submit">Aggiungi Giocatore</button>
+                </form>
+                <ul id="listaGiocatori"></ul>
+            </section>
+
+            <!-- Inserisci risultato partita -->
+            <section class="riquadro">
+                <h2>Inserisci risultato partita</h2>
+                <form id="formPartita">
+                    <select id="squadraCasa" required>
+                        <option value="">Squadra casa</option>
+                    </select>
+                    <input type="number" id="setCasa" min="0" max="3" placeholder="Set casa" required>
+                    <select id="squadraOspite" required>
+                        <option value="">Squadra ospite</option>
+                    </select>
+                    <input type="number" id="setOspite" min="0" max="3" placeholder="Set ospite" required>
+                    <button type="submit">Registra partita</button>
+                </form>
+            </section>
+
+            <!-- Premia miglior giocatore -->
+            <section class="riquadro">
+                <h2>Premia miglior giocatore</h2>
+                <form id="formPremio">
+                    <select id="partitaPremio" required>
+                        <option value="">Seleziona partita</option>
+                    </select>
+                    <select id="giocatorePremio" required>
+                        <option value="">Seleziona giocatore</option>
+                    </select>
+                    <button type="submit">Assegna premio</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Verifica password
+        function verificaPassword() {
+            const psw = document.getElementById('password-input').value;
+            if (psw === '123') {
+                document.getElementById('password-protection').style.display = 'none';
+                document.getElementById('admin-content').style.display = 'block';
+                caricaDatiAdmin();
+            } else {
+                alert('Password errata!');
+            }
+        }
+
+        // Funzioni per popolare i select
+        async function caricaSquadreSelect(selectId) {
+            const { data: squadre, error } = await supabase.from('squadre').select('*');
+            if (error) console.error(error);
+            else {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">Seleziona squadra</option>';
+                squadre.forEach(s => {
+                    select.innerHTML += `<option value="${s.id}">${s.nome}</option>`;
+                });
+            }
+        }
+
+        async function caricaGiocatoriSelect(selectId) {
+            const { data: giocatori, error } = await supabase
+                .from('giocatori')
+                .select('id, nome, ruolo, squadra_id, squadre!inner(nome)');
+            if (error) console.error(error);
+            else {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">Seleziona giocatore</option>';
+                giocatori.forEach(g => {
+                    select.innerHTML += `<option value="${g.id}">${g.nome} (${g.ruolo} - ${g.squadre.nome})</option>`;
+                });
+            }
+        }
+
+        async function caricaPartiteSelect() {
+            const { data: partite, error } = await supabase
+                .from('partite')
+                .select(`
+                    id,
+                    set_casa,
+                    set_ospite,
+                    squadre!squadra_casa_id (nome),
+                    squadre!squadra_ospite_id (nome)
+                `)
+                .order('data', { ascending: false });
+            if (error) console.error(error);
+            else {
+                const select = document.getElementById('partitaPremio');
+                select.innerHTML = '<option value="">Seleziona partita</option>';
+                partite.forEach(p => {
+                    select.innerHTML += `<option value="${p.id}">${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome} (${p.set_casa}-${p.set_ospite})</option>`;
+                });
+            }
+        }
+
+        // Mostra le squadre e giocatori in lista
+        async function aggiornaListaSquadre() {
+            const { data: squadre } = await supabase.from('squadre').select('*');
+            let html = '';
+            squadre.forEach(s => html += `<li>${s.nome}</li>`);
+            document.getElementById('listaSquadre').innerHTML = html;
+        }
+
+        async function aggiornaListaGiocatori() {
+            const { data: giocatori } = await supabase
+                .from('giocatori')
+                .select('nome, ruolo, squadre!inner(nome)');
+            let html = '';
+            giocatori.forEach(g => html += `<li>${g.nome} - ${g.ruolo} (${g.squadre.nome})</li>`);
+            document.getElementById('listaGiocatori').innerHTML = html;
+        }
+
+        // Carica tutti i dati per l'admin
+        function caricaDatiAdmin() {
+            caricaSquadreSelect('squadraGiocatore');
+            caricaSquadreSelect('squadraCasa');
+            caricaSquadreSelect('squadraOspite');
+            caricaGiocatoriSelect('giocatorePremio');
+            caricaPartiteSelect();
+            aggiornaListaSquadre();
+            aggiornaListaGiocatori();
+
+            // Eventi form
+            document.getElementById('formSquadra').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const nome = document.getElementById('nomeSquadra').value;
+                await supabase.from('squadre').insert({ nome });
+                document.getElementById('nomeSquadra').value = '';
+                aggiornaListaSquadre();
+                caricaSquadreSelect('squadraGiocatore');
+                caricaSquadreSelect('squadraCasa');
+                caricaSquadreSelect('squadraOspite');
+            });
+
+            document.getElementById('formGiocatore').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const nome = document.getElementById('nomeGiocatore').value;
+                const squadraId = document.getElementById('squadraGiocatore').value;
+                const ruolo = document.getElementById('ruoloGiocatore').value;
+                await supabase.from('giocatori').insert({ nome, squadra_id: squadraId, ruolo });
+                document.getElementById('nomeGiocatore').value = '';
+                document.getElementById('ruoloGiocatore').value = '';
+                aggiornaListaGiocatori();
+                caricaGiocatoriSelect('giocatorePremio');
+            });
+
+            document.getElementById('formPartita').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const casaId = document.getElementById('squadraCasa').value;
+                const ospiteId = document.getElementById('squadraOspite').value;
+                const setCasa = parseInt(document.getElementById('setCasa').value);
+                const setOspite = parseInt(document.getElementById('setOspite').value);
+
+                if (casaId === ospiteId) {
+                    alert('Le squadre devono essere diverse');
+                    return;
+                }
+
+                // Calcolo punti
+                let puntiCasa, puntiOspite;
+                if (setCasa > setOspite) {
+                    if (setCasa === 3 && (setOspite === 0 || setOspite === 1)) {
+                        puntiCasa = 3; puntiOspite = 0;
+                    } else if (setCasa === 3 && setOspite === 2) {
+                        puntiCasa = 2; puntiOspite = 1;
+                    } else {
+                        alert('Risultato non valido');
+                        return;
+                    }
+                } else if (setOspite > setCasa) {
+                    if (setOspite === 3 && (setCasa === 0 || setCasa === 1)) {
+                        puntiCasa = 0; puntiOspite = 3;
+                    } else if (setOspite === 3 && setCasa === 2) {
+                        puntiCasa = 1; puntiOspite = 2;
+                    } else {
+                        alert('Risultato non valido');
+                        return;
+                    }
+                } else {
+                    alert('Il risultato non può essere un pareggio');
+                    return;
+                }
+
+                // Inserisci partita
+                const { error } = await supabase.from('partite').insert({
+                    squadra_casa_id: casaId,
+                    squadra_ospite_id: ospiteId,
+                    set_casa: setCasa,
+                    set_ospite: setOspite,
+                    data: new Date()
+                });
+
+                if (error) {
+                    alert('Errore nel salvare la partita');
+                    console.error(error);
+                    return;
+                }
+
+                // Aggiorna statistiche squadre
+                await aggiornaStatisticheSquadra(casaId, puntiCasa, setCasa > setOspite);
+                await aggiornaStatisticheSquadra(ospiteId, puntiOspite, setOspite > setCasa);
+
+                alert('Partita registrata e classifica aggiornata!');
+                document.getElementById('setCasa').value = '';
+                document.getElementById('setOspite').value = '';
+                caricaPartiteSelect();
+            });
+
+            async function aggiornaStatisticheSquadra(squadraId, punti, vinta) {
+                const { data: squadra } = await supabase.from('squadre').select('*').eq('id', squadraId).single();
+                const nuoveStat = {
+                    punti: squadra.punti + punti,
+                    partite_giocate: squadra.partite_giocate + 1,
+                    vinte: squadra.vinte + (vinta ? 1 : 0),
+                    perse: squadra.perse + (vinta ? 0 : 1)
+                };
+                await supabase.from('squadre').update(nuoveStat).eq('id', squadraId);
+            }
+
+            document.getElementById('formPremio').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const partitaId = document.getElementById('partitaPremio').value;
+                const giocatoreId = document.getElementById('giocatorePremio').value;
+                await supabase.from('premi').insert({
+                    partita_id: partitaId,
+                    giocatore_id: giocatoreId,
+                    data: new Date()
+                });
+                alert('Premio assegnato!');
+            });
+        }
+    </script>
+</body>
+</html>
