@@ -7,12 +7,67 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <style>
-        /* Rendi la classifica più grande */
-        #classifica {
-            flex: 2 1 600px; /* Più grande degli altri */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
-        #ultime-partite {
-            flex: 1 1 300px;
+        
+        .riquadro {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        .riquadro h2 {
+            color: #f97316;
+            margin-top: 0;
+            border-bottom: 2px solid #f97316;
+            padding-bottom: 10px;
+            font-size: 1.3rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f97316;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        .partita {
+            padding: 10px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-left: 4px solid #f97316;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .partita small {
+            display: block;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -25,35 +80,81 @@
         </nav>
     </header>
 
-    <main class="container">
-        <!-- Riquadro Classifica Squadre (più grande) -->
-        <section class="riquadro" id="classifica">
-            <h2>Classifica Squadre</h2>
-            <table id="tabellaClassifica">
+    <div class="container">
+        <!-- SINISTRA: Classifica Giocatori -->
+        <section class="riquadro" id="classifica-giocatori">
+            <h2>🏆 Classifica Giocatori</h2>
+            <table id="tabellaGiocatori">
                 <thead>
                     <tr>
+                        <th>Giocatore</th>
                         <th>Squadra</th>
-                        <th>Punti</th>
-                        <th>Giocate</th>
-                        <th>Vinte</th>
-                        <th>Perse</th>
+                        <th>Voto</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </section>
 
-        <!-- Riquadro Ultime Partite -->
+        <!-- CENTRO: Classifica Squadre -->
+        <section class="riquadro" id="classifica-squadre">
+            <h2>📊 Classifica Squadre</h2>
+            <table id="tabellaClassifica">
+                <thead>
+                    <tr>
+                        <th>Squadra</th>
+                        <th>Punti</th>
+                        <th>V</th>
+                        <th>P</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- DESTRA: Ultime Partite -->
         <section class="riquadro" id="ultime-partite">
-            <h2>Ultime partite</h2>
+            <h2>⚡ Ultime Partite</h2>
             <div id="listaPartite"></div>
         </section>
-    </main>
+    </div>
 
     <script>
-        const classificaBody = document.querySelector('#tabellaClassifica tbody');
+        const tabellaGiocatori = document.querySelector('#tabellaGiocatori tbody');
+        const tabellaSquadre = document.querySelector('#tabellaClassifica tbody');
         const listaPartiteDiv = document.getElementById('listaPartite');
 
+        // Carica classifica giocatori
+        function caricaGiocatori() {
+            supabaseClient
+                .channel('giocatori-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'giocatori' }, () => fetchGiocatori())
+                .subscribe();
+            fetchGiocatori();
+        }
+
+        async function fetchGiocatori() {
+            const { data: giocatori, error } = await supabaseClient
+                .from('giocatori')
+                .select('nome, voto, squadre!inner(nome)')
+                .order('voto', { ascending: false })
+                .limit(20);
+
+            if (error) console.error(error);
+            else {
+                let html = '';
+                giocatori.forEach(g => {
+                    html += `<tr>
+                        <td><strong>${g.nome}</strong></td>
+                        <td>${g.squadre.nome}</td>
+                        <td style="font-weight: bold; color: ${g.voto > 80 ? '#28a745' : '#f97316'}">${g.voto || 0}</td>
+                    </tr>`;
+                });
+                tabellaGiocatori.innerHTML = html;
+            }
+        }
+
+        // Carica classifica squadre
         function caricaClassifica() {
             supabaseClient
                 .channel('squadre-channel')
@@ -74,16 +175,16 @@
                 squadre.forEach(s => {
                     html += `<tr>
                         <td><strong>${s.nome}</strong></td>
-                        <td>${s.punti}</td>
-                        <td>${s.partite_giocate}</td>
+                        <td style="font-weight: bold; color: #f97316">${s.punti}</td>
                         <td>${s.vinte}</td>
                         <td>${s.perse}</td>
                     </tr>`;
                 });
-                classificaBody.innerHTML = html;
+                tabellaSquadre.innerHTML = html;
             }
         }
 
+        // Carica ultime partite
         function caricaPartite() {
             supabaseClient
                 .channel('partite-channel')
@@ -100,40 +201,41 @@
                     set_casa,
                     set_ospite,
                     data,
-                    squadra_casa_id,
-                    squadra_ospite_id,
                     squadre!squadra_casa_id (nome),
                     squadre!squadra_ospite_id (nome)
                 `)
                 .order('data', { ascending: false })
-                .limit(5);
+                .limit(10);
 
             if (error) console.error(error);
             else {
                 let html = '';
                 for (const p of partite) {
-                    const data = new Date(p.data).toLocaleDateString('it-IT');
+                    const data = new Date(p.data).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
                     
-                    // Cerca il miglior giocatore per questa partita
                     const { data: premi } = await supabaseClient
                         .from('premi')
-                        .select('giocatori!inner(nome)')
+                        .select('giocatori!inner(nome, voto)')
                         .eq('partita_id', p.id);
                     
                     let migliore = '';
                     if (premi && premi.length > 0) {
-                        migliore = `<br><small>⭐ Migliore: ${premi[0].giocatori.nome}</small>`;
+                        migliore = `<small>⭐ Migliore: ${premi[0].giocatori.nome} (${premi[0].giocatori.voto})</small>`;
                     }
                     
                     html += `<div class="partita">
                         <strong>${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome}</strong><br>
-                        ${p.set_casa} - ${p.set_ospite} (${data})${migliore}
+                        <span style="font-size: 1.2rem; font-weight: bold; color: #f97316">${p.set_casa} - ${p.set_ospite}</span><br>
+                        <small>${data}</small>
+                        ${migliore}
                     </div>`;
                 }
                 listaPartiteDiv.innerHTML = html;
             }
         }
 
+        // Avvia tutto
+        caricaGiocatori();
         caricaClassifica();
         caricaPartite();
     </script>
