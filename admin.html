@@ -262,7 +262,7 @@
         }
 
         // ----------------------------------------------
-        // Login - versione con doppia sicurezza
+        // Login
         // ----------------------------------------------
         function verificaPassword() {
             const psw = document.getElementById('password-input').value;
@@ -276,11 +276,9 @@
             }
         }
 
-        // Assicuriamoci che il pulsante funzioni anche se l'onclick non parte
         document.addEventListener('DOMContentLoaded', function() {
             const loginBtn = document.getElementById('login-button');
             if (loginBtn) {
-                // Se l'attributo onclick non funziona, questo lo sovrascrive in modo sicuro
                 loginBtn.onclick = function(e) {
                     e.preventDefault();
                     verificaPassword();
@@ -289,7 +287,7 @@
         });
 
         // ----------------------------------------------
-        // Variabili globali e caricamento iniziale
+        // Variabili globali
         // ----------------------------------------------
         let squadre = [];
         let giocatori = [];
@@ -323,7 +321,6 @@
         }
 
         function aggiornaSelect() {
-            // Select per squadra giocatore
             const selectSG = document.getElementById('squadraGiocatore');
             if (selectSG) {
                 selectSG.innerHTML = '<option value="">Seleziona squadra</option>';
@@ -332,7 +329,6 @@
                 });
             }
 
-            // Select squadra casa
             const selectSC = document.getElementById('squadraCasa');
             if (selectSC) {
                 selectSC.innerHTML = '<option value="">Squadra casa</option>';
@@ -341,7 +337,6 @@
                 });
             }
 
-            // Select squadra ospite
             const selectSO = document.getElementById('squadraOspite');
             if (selectSO) {
                 selectSO.innerHTML = '<option value="">Squadra ospite</option>';
@@ -351,7 +346,6 @@
             }
         }
 
-        // Aggiorna lista miglior giocatore in base alle squadre selezionate
         function aggiornaMigliorGiocatore() {
             const casaId = document.getElementById('squadraCasa').value;
             const ospiteId = document.getElementById('squadraOspite').value;
@@ -600,10 +594,13 @@
         window.eliminaPartita = async (id) => {
             if (!confirm('Sicuro di voler eliminare questa partita?')) return;
             try {
-                await supabaseClient.from('partite').delete().eq('id', id);
+                console.log('Eliminazione partita con id:', id);
+                const { error } = await supabaseClient.from('partite').delete().eq('id', id);
+                if (error) throw error;
                 await aggiornaListe();
                 mostraMessaggio('✅ Partita eliminata!');
             } catch (error) {
+                console.error('Errore eliminazione partita:', error);
                 mostraMessaggio('❌ Errore: ' + error.message, 'error');
             }
         };
@@ -665,7 +662,7 @@
         };
 
         // ----------------------------------------------
-        // Event listeners per il miglior giocatore
+        // Event listeners
         // ----------------------------------------------
         document.getElementById('squadraCasa')?.addEventListener('change', aggiornaMigliorGiocatore);
         document.getElementById('squadraOspite')?.addEventListener('change', aggiornaMigliorGiocatore);
