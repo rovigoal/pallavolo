@@ -23,6 +23,8 @@
         input, select, button { padding: 0.7rem 1rem; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 0.95rem; outline: none; }
         button { background: #f97316; color: white; border: none; cursor: pointer; }
         button:hover { background: #ea580c; }
+        .btn-secondary { background: #64748b; }
+        .btn-secondary:hover { background: #475569; }
         .btn-danger { background: #dc2626; }
         .btn-small { padding: 0.3rem 0.8rem; font-size: 0.8rem; margin-left: 0.5rem; }
         ul { list-style: none; max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.5rem; }
@@ -32,6 +34,7 @@
         #password-protection { max-width: 400px; margin: 4rem auto; text-align: center; }
         #password-protection input { width: 100%; margin: 1rem 0; }
         #password-protection button { width: 100%; }
+        .edit-form { background: #f1f5f9; border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; border: 2px solid #f97316; }
     </style>
 </head>
 <body>
@@ -75,6 +78,32 @@
                     <button type="button" onclick="aggiungiPartita()">Registra</button>
                 </form>
 
+                <!-- Form di modifica (inizialmente nascosto) -->
+                <div id="editFormContainer" class="edit-form" style="display: none;">
+                    <h3 style="color: #f97316; margin-bottom: 1rem;">✏️ Modifica partita</h3>
+                    <form id="formModifica" onsubmit="return false;">
+                        <input type="hidden" id="editPartitaId">
+                        <select id="editSquadraCasa" required style="min-width: 160px;">
+                            <option value="">Squadra casa</option>
+                        </select>
+                        <input type="number" id="editSetCasa" min="0" max="3" placeholder="Set casa" required style="width: 90px;">
+                        
+                        <select id="editSquadraOspite" required style="min-width: 160px;">
+                            <option value="">Squadra ospite</option>
+                        </select>
+                        <input type="number" id="editSetOspite" min="0" max="3" placeholder="Set ospite" required style="width: 90px;">
+                        
+                        <select id="editMigliorGiocatore" required style="min-width: 200px;">
+                            <option value="">Miglior giocatore</option>
+                        </select>
+                        
+                        <input type="number" id="editPunteggioMigliore" placeholder="Punteggio (0-99)" min="0" max="99" step="1" required style="width: 110px;">
+                        
+                        <button type="button" onclick="aggiornaPartita()" style="background: #10b981;">Aggiorna</button>
+                        <button type="button" onclick="annullaModifica()" class="btn-secondary">Annulla</button>
+                    </form>
+                </div>
+
                 <h3>Partite registrate</h3>
                 <ul id="listaPartite"></ul>
                 <button class="btn-danger" onclick="eliminaTuttePartite()">🗑️ Elimina TUTTE le partite</button>
@@ -117,6 +146,7 @@
             await caricaGiocatori();
             await aggiornaListaPartite();
             aggiornaSelect();
+            aggiornaSelectModifica();
         }
 
         async function caricaSquadre() {
@@ -137,6 +167,14 @@
             selectOspite.innerHTML = html;
         }
 
+        function aggiornaSelectModifica() {
+            const selectCasa = document.getElementById('editSquadraCasa');
+            const selectOspite = document.getElementById('editSquadraOspite');
+            const html = '<option value="">Seleziona squadra</option>' + squadre.map(s => `<option value="${s.id}">${s.nome}</option>`).join('');
+            selectCasa.innerHTML = html;
+            selectOspite.innerHTML = html;
+        }
+
         function aggiornaMigliorGiocatore() {
             const casaId = document.getElementById('squadraCasa').value;
             const ospiteId = document.getElementById('squadraOspite').value;
@@ -148,19 +186,47 @@
                 filtrati.map(g => `<option value="${g.id}">${g.nome} (punti: ${g.punteggio_totale})</option>`).join('');
         }
 
+        function aggiornaMigliorGiocatoreModifica() {
+            const casaId = document.getElementById('editSquadraCasa').value;
+            const ospiteId = document.getElementById('editSquadraOspite').value;
+            if (!casaId || !ospiteId) return;
+
+            const filtrati = giocatori.filter(g => g.squadra_id === casaId || g.squadra_id === ospiteId);
+            const select = document.getElementById('editMigliorGiocatore');
+            select.innerHTML = '<option value="">Miglior giocatore</option>' + 
+                filtrati.map(g => `<option value="${g.id}">${g.nome} (punti: ${g.punteggio_totale})</option>`).join('');
+        }
+
         async function aggiornaListaPartite() {
             const { data } = await supabaseClient
                 .from('partite')
-                .select('id, set_casa, set_ospite, squadre!squadra_casa_id(nome), squadre!squadra_ospite_id(nome)')
+                .select('id, set_casa, set_ospite, squadra_casa_id, squadra_ospite_id, squadre!squadra_casa_id(nome), squadre!squadra_ospite_id(nome)')
                 .order('data', { ascending: false });
             let html = '';
             (data || []).forEach(p => {
                 html += `<li>
                     <span><strong>${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome}</strong> (${p.set_casa}-${p.set_ospite})</span>
-                    <button class="btn-danger btn-small" onclick="eliminaPartita('${p.id}')">Elimina</button>
+                    <div>
+                        <button class="btn-small" onclick="modificaPartita('${p.id}')">✏️ Modifica</button>
+                        <button class="btn-danger btn-small" onclick="eliminaPartita('${p.id}')">Elimina</button>
+                    </div>
                 </li>`;
             });
             document.getElementById('listaPartite').innerHTML = html;
+        }
+
+        // Funzione per calcolare punti in base al risultato
+        function calcolaPunti(setCasa, setOspite) {
+            if (setCasa > setOspite) {
+                if (setCasa === 3 && (setOspite === 0 || setOspite === 1)) return [3, 0];
+                else if (setCasa === 3 && setOspite === 2) return [2, 1];
+                else return null;
+            } else if (setOspite > setCasa) {
+                if (setOspite === 3 && (setCasa === 0 || setCasa === 1)) return [0, 3];
+                else if (setOspite === 3 && setCasa === 2) return [1, 2];
+                else return null;
+            }
+            return null; // pareggio non valido
         }
 
         async function aggiungiPartita() {
@@ -176,30 +242,12 @@
                 return;
             }
 
-            // Calcolo punti
-            let puntiCasa, puntiOspite;
-            if (setCasa > setOspite) {
-                if (setCasa === 3 && (setOspite === 0 || setOspite === 1)) {
-                    puntiCasa = 3; puntiOspite = 0;
-                } else if (setCasa === 3 && setOspite === 2) {
-                    puntiCasa = 2; puntiOspite = 1;
-                } else {
-                    mostraMessaggio('❌ Risultato non valido (usa 3-0, 3-1, 3-2)', 'error');
-                    return;
-                }
-            } else if (setOspite > setCasa) {
-                if (setOspite === 3 && (setCasa === 0 || setCasa === 1)) {
-                    puntiCasa = 0; puntiOspite = 3;
-                } else if (setOspite === 3 && setCasa === 2) {
-                    puntiCasa = 1; puntiOspite = 2;
-                } else {
-                    mostraMessaggio('❌ Risultato non valido (usa 0-3, 1-3, 2-3)', 'error');
-                    return;
-                }
-            } else {
-                mostraMessaggio('❌ Pareggio non valido', 'error');
+            const punti = calcolaPunti(setCasa, setOspite);
+            if (!punti) {
+                mostraMessaggio('❌ Risultato non valido (usa 3-0, 3-1, 3-2, 0-3, 1-3, 2-3)', 'error');
                 return;
             }
+            const [puntiCasa, puntiOspite] = punti;
 
             try {
                 // Inserisci partita
@@ -241,23 +289,18 @@
                 await aggiornaStatistiche(casaId, puntiCasa, setCasa > setOspite);
                 await aggiornaStatistiche(ospiteId, puntiOspite, setOspite > setCasa);
 
-                // Recupera i nomi per il messaggio
-                const squadraCasaNome = squadre.find(s => s.id === casaId)?.nome || '';
-                const squadraOspiteNome = squadre.find(s => s.id === ospiteId)?.nome || '';
-                const giocatoreNome = giocatori.find(g => g.id === migliorId)?.nome || '';
-
                 // Pulisci form
                 document.getElementById('setCasa').value = '';
                 document.getElementById('setOspite').value = '';
                 document.getElementById('punteggioMigliore').value = '';
                 document.getElementById('migliorGiocatore').innerHTML = '<option value="">Miglior giocatore</option>';
 
-                // Ricarica dati e mostra messaggio
+                // Ricarica dati
                 await caricaGiocatori();
                 await aggiornaListaPartite();
                 aggiornaMigliorGiocatore();
 
-                mostraMessaggio(`✅ Partita registrata: ${squadraCasaNome} ${setCasa}-${setOspite} ${squadraOspiteNome} - MVP: ${giocatoreNome} (${punteggioMigliore} punti)`);
+                mostraMessaggio(`✅ Partita registrata!`);
             } catch (error) {
                 console.error(error);
                 mostraMessaggio('❌ Errore: ' + error.message, 'error');
@@ -279,12 +322,194 @@
             }).eq('id', squadraId);
         }
 
-        // Nuova funzione eliminaPartita con sottrazione punti
+        // Funzione per sottrarre statistiche (usata in modifica/elimina)
+        async function sottraiStatistiche(squadraId, punti, vinta) {
+            const { data: squadra, error } = await supabaseClient
+                .from('squadre')
+                .select('*')
+                .eq('id', squadraId)
+                .single();
+            if (error) throw error;
+            await supabaseClient.from('squadre').update({
+                punti: squadra.punti - punti,
+                partite_giocate: squadra.partite_giocate - 1,
+                vinte: squadra.vinte - (vinta ? 1 : 0),
+                perse: squadra.perse - (vinta ? 0 : 1)
+            }).eq('id', squadraId);
+        }
+
+        // Modifica partita: carica i dati nel form di modifica
+        window.modificaPartita = async (id) => {
+            try {
+                // Recupera partita
+                const { data: partita, error: errPartita } = await supabaseClient
+                    .from('partite')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                if (errPartita) throw errPartita;
+
+                // Recupera premio associato
+                const { data: premi, error: errPremi } = await supabaseClient
+                    .from('premi')
+                    .select('giocatore_id, punti')
+                    .eq('partita_id', id);
+                if (errPremi) throw errPremi;
+
+                const premio = premi && premi.length > 0 ? premi[0] : null;
+
+                // Popola form di modifica
+                document.getElementById('editPartitaId').value = partita.id;
+                document.getElementById('editSquadraCasa').value = partita.squadra_casa_id;
+                document.getElementById('editSquadraOspite').value = partita.squadra_ospite_id;
+                document.getElementById('editSetCasa').value = partita.set_casa;
+                document.getElementById('editSetOspite').value = partita.set_ospite;
+                document.getElementById('editPunteggioMigliore').value = premio ? premio.punti : '';
+
+                // Aggiorna select MVP in base alle squadre selezionate
+                aggiornaMigliorGiocatoreModifica();
+                // Imposta il giocatore selezionato
+                if (premio) {
+                    document.getElementById('editMigliorGiocatore').value = premio.giocatore_id;
+                }
+
+                // Mostra form di modifica
+                document.getElementById('editFormContainer').style.display = 'block';
+                // Nascondi eventualmente il form di inserimento? (opzionale)
+            } catch (error) {
+                console.error(error);
+                mostraMessaggio('❌ Errore nel caricamento dei dati: ' + error.message, 'error');
+            }
+        };
+
+        window.annullaModifica = function() {
+            document.getElementById('editFormContainer').style.display = 'none';
+            document.getElementById('editPartitaId').value = '';
+        };
+
+        window.aggiornaPartita = async () => {
+            const id = document.getElementById('editPartitaId').value;
+            const casaId = document.getElementById('editSquadraCasa').value;
+            const ospiteId = document.getElementById('editSquadraOspite').value;
+            const setCasa = parseInt(document.getElementById('editSetCasa').value);
+            const setOspite = parseInt(document.getElementById('editSetOspite').value);
+            const migliorId = document.getElementById('editMigliorGiocatore').value;
+            const punteggioMigliore = parseInt(document.getElementById('editPunteggioMigliore').value);
+
+            if (!casaId || !ospiteId || casaId === ospiteId || !migliorId || isNaN(punteggioMigliore)) {
+                mostraMessaggio('❌ Dati incompleti o errati', 'error');
+                return;
+            }
+
+            const nuoviPunti = calcolaPunti(setCasa, setOspite);
+            if (!nuoviPunti) {
+                mostraMessaggio('❌ Risultato non valido', 'error');
+                return;
+            }
+            const [nuoviPuntiCasa, nuoviPuntiOspite] = nuoviPunti;
+
+            try {
+                // Recupera i vecchi dati della partita e del premio
+                const { data: vecchiaPartita, error: errVecchia } = await supabaseClient
+                    .from('partite')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                if (errVecchia) throw errVecchia;
+
+                const { data: vecchiPremi, error: errVecchiPremi } = await supabaseClient
+                    .from('premi')
+                    .select('giocatore_id, punti')
+                    .eq('partita_id', id);
+                if (errVecchiPremi) throw errVecchiPremi;
+
+                const vecchioPremio = vecchiPremi && vecchiPremi.length > 0 ? vecchiPremi[0] : null;
+
+                // Calcola vecchi punti squadre
+                const vecchiPunti = calcolaPunti(vecchiaPartita.set_casa, vecchiaPartita.set_ospite);
+                if (!vecchiPunti) throw new Error('Vecchi punti non validi');
+                const [vecchiPuntiCasa, vecchiPuntiOspite] = vecchiPunti;
+
+                // Sottrai vecchi punti da squadre e vecchio MVP
+                await sottraiStatistiche(vecchiaPartita.squadra_casa_id, vecchiPuntiCasa, vecchiaPartita.set_casa > vecchiaPartita.set_ospite);
+                await sottraiStatistiche(vecchiaPartita.squadra_ospite_id, vecchiPuntiOspite, vecchiaPartita.set_ospite > vecchiaPartita.set_casa);
+
+                if (vecchioPremio) {
+                    const { data: vecchioGiocatore, error: errVecchioGioc } = await supabaseClient
+                        .from('giocatori')
+                        .select('punteggio_totale')
+                        .eq('id', vecchioPremio.giocatore_id)
+                        .single();
+                    if (!errVecchioGioc && vecchioGiocatore) {
+                        const nuovoPunteggioVecchio = (vecchioGiocatore.punteggio_totale || 0) - (vecchioPremio.punti || 0);
+                        await supabaseClient.from('giocatori').update({ punteggio_totale: nuovoPunteggioVecchio }).eq('id', vecchioPremio.giocatore_id);
+                    }
+                }
+
+                // Aggiorna la partita
+                const { error: errAggPartita } = await supabaseClient
+                    .from('partite')
+                    .update({
+                        squadra_casa_id: casaId,
+                        squadra_ospite_id: ospiteId,
+                        set_casa: setCasa,
+                        set_ospite: setOspite
+                    })
+                    .eq('id', id);
+                if (errAggPartita) throw errAggPartita;
+
+                // Aggiorna il premio (se esiste) o inseriscilo
+                if (vecchioPremio) {
+                    const { error: errAggPremio } = await supabaseClient
+                        .from('premi')
+                        .update({
+                            giocatore_id: migliorId,
+                            punti: punteggioMigliore
+                        })
+                        .eq('partita_id', id);
+                    if (errAggPremio) throw errAggPremio;
+                } else {
+                    const { error: errInsPremio } = await supabaseClient
+                        .from('premi')
+                        .insert({
+                            partita_id: id,
+                            giocatore_id: migliorId,
+                            punti: punteggioMigliore,
+                            data: new Date()
+                        });
+                    if (errInsPremio) throw errInsPremio;
+                }
+
+                // Aggiungi nuovi punti al nuovo MVP
+                const { data: nuovoGiocatore, error: errNuovoGioc } = await supabaseClient
+                    .from('giocatori')
+                    .select('punteggio_totale')
+                    .eq('id', migliorId)
+                    .single();
+                if (errNuovoGioc) throw errNuovoGioc;
+                const nuovoPunteggioNuovo = (nuovoGiocatore.punteggio_totale || 0) + punteggioMigliore;
+                await supabaseClient.from('giocatori').update({ punteggio_totale: nuovoPunteggioNuovo }).eq('id', migliorId);
+
+                // Aggiungi nuovi punti alle squadre
+                await aggiornaStatistiche(casaId, nuoviPuntiCasa, setCasa > setOspite);
+                await aggiornaStatistiche(ospiteId, nuoviPuntiOspite, setOspite > setCasa);
+
+                // Ricarica dati e nascondi form
+                await caricaGiocatori();
+                await aggiornaListaPartite();
+                annullaModifica();
+                mostraMessaggio('✅ Partita aggiornata con successo!');
+            } catch (error) {
+                console.error(error);
+                mostraMessaggio('❌ Errore durante l\'aggiornamento: ' + error.message, 'error');
+            }
+        };
+
         window.eliminaPartita = async (id) => {
             if (!confirm('Eliminare questa partita?')) return;
             
             try {
-                // 1. Recupera i dati della partita
+                // Recupera i dati della partita
                 const { data: partita, error: errPartita } = await supabaseClient
                     .from('partite')
                     .select('*')
@@ -292,14 +517,14 @@
                     .single();
                 if (errPartita) throw errPartita;
                 
-                // 2. Recupera il premio associato
+                // Recupera il premio associato
                 const { data: premi, error: errPremi } = await supabaseClient
                     .from('premi')
                     .select('giocatore_id, punti')
                     .eq('partita_id', id);
                 if (errPremi) throw errPremi;
                 
-                // 3. Sottrai i punti dal giocatore MVP (se esiste)
+                // Sottrai punti dal giocatore MVP
                 if (premi && premi.length > 0) {
                     const premio = premi[0];
                     if (premio.punti) {
@@ -318,54 +543,18 @@
                     }
                 }
                 
-                // 4. Calcola i punti da sottrarre alle squadre (in base al risultato)
-                let puntiCasa = 0, puntiOspite = 0;
-                const setCasa = partita.set_casa;
-                const setOspite = partita.set_ospite;
-                
-                if (setCasa > setOspite) {
-                    if (setCasa === 3 && (setOspite === 0 || setOspite === 1)) {
-                        puntiCasa = 3; puntiOspite = 0;
-                    } else if (setCasa === 3 && setOspite === 2) {
-                        puntiCasa = 2; puntiOspite = 1;
-                    }
-                } else if (setOspite > setCasa) {
-                    if (setOspite === 3 && (setCasa === 0 || setCasa === 1)) {
-                        puntiCasa = 0; puntiOspite = 3;
-                    } else if (setOspite === 3 && setCasa === 2) {
-                        puntiCasa = 1; puntiOspite = 2;
-                    }
+                // Calcola punti da sottrarre alle squadre
+                const punti = calcolaPunti(partita.set_casa, partita.set_ospite);
+                if (punti) {
+                    const [puntiCasa, puntiOspite] = punti;
+                    await sottraiStatistiche(partita.squadra_casa_id, puntiCasa, partita.set_casa > partita.set_ospite);
+                    await sottraiStatistiche(partita.squadra_ospite_id, puntiOspite, partita.set_ospite > partita.set_casa);
                 }
                 
-                // 5. Aggiorna statistiche squadre (sottrai)
-                const aggiornaSquadra = async (squadraId, punti, vinta) => {
-                    const { data: squadra, error } = await supabaseClient
-                        .from('squadre')
-                        .select('*')
-                        .eq('id', squadraId)
-                        .single();
-                    if (error) throw error;
-                    await supabaseClient
-                        .from('squadre')
-                        .update({
-                            punti: squadra.punti - punti,
-                            partite_giocate: squadra.partite_giocate - 1,
-                            vinte: squadra.vinte - (vinta ? 1 : 0),
-                            perse: squadra.perse - (vinta ? 0 : 1)
-                        })
-                        .eq('id', squadraId);
-                };
-                
-                await aggiornaSquadra(partita.squadra_casa_id, puntiCasa, setCasa > setOspite);
-                await aggiornaSquadra(partita.squadra_ospite_id, puntiOspite, setOspite > setCasa);
-                
-                // 6. Elimina il premio
+                // Elimina premio e partita
                 await supabaseClient.from('premi').delete().eq('partita_id', id);
-                
-                // 7. Elimina la partita
                 await supabaseClient.from('partite').delete().eq('id', id);
                 
-                // 8. Aggiorna la lista
                 await aggiornaListaPartite();
                 mostraMessaggio('✅ Partita eliminata e punti aggiornati!');
                 
@@ -387,8 +576,11 @@
             }
         };
 
+        // Event listeners per i select dinamici
         document.getElementById('squadraCasa')?.addEventListener('change', aggiornaMigliorGiocatore);
         document.getElementById('squadraOspite')?.addEventListener('change', aggiornaMigliorGiocatore);
+        document.getElementById('editSquadraCasa')?.addEventListener('change', aggiornaMigliorGiocatoreModifica);
+        document.getElementById('editSquadraOspite')?.addEventListener('change', aggiornaMigliorGiocatoreModifica);
     </script>
 </body>
 </html>
