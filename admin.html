@@ -232,9 +232,11 @@
             }
         };
 
+        // Modifica: elimina prima i premi associati ai giocatori
         window.eliminaTuttiGiocatori = async () => {
             if (!confirm('ELIMINARE TUTTI I GIOCATORI?')) return;
             try {
+                await supabaseClient.from('premi').delete().neq('id', '00000000-0000-0000-0000-000000000000');
                 await supabaseClient.from('giocatori').delete().neq('id', '00000000-0000-0000-0000-000000000000');
                 await caricaGiocatori();
                 await aggiornaListe();
