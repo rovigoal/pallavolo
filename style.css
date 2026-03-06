@@ -186,4 +186,34 @@ ul li {
     margin: 0.5rem 0;
     padding: 0.8rem;
     border-radius: 10px;
-    border-left: 4px solid #f97316
+    border-left: 4px solid #f97316;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#password-protection {
+    text-align: center;
+    background: white;
+    padding: 3rem;
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    max-width: 400px;
+    margin: 5rem auto;
+}
+
+#password-protection input {
+    width: 80%;
+    margin: 1rem auto;
+    display: block;
+}
+
+#password-protection button {
+    background: #f97316;
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
