@@ -42,7 +42,7 @@
 
         <!-- Riquadro Classifica Giocatori -->
         <section class="riquadro" id="classifica-giocatori">
-            <h2>Classifica Giocatori (voto medio)</h2>
+            <h2>Classifica Giocatori</h2>
             <table id="tabellaGiocatori">
                 <thead>
                     <tr>
@@ -64,7 +64,7 @@
 
         // Carica classifica squadre in tempo reale
         function caricaClassifica() {
-            supabase
+            supabaseClient
                 .channel('squadre-channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'squadre' }, () => fetchClassifica())
                 .subscribe();
@@ -72,7 +72,7 @@
         }
 
         async function fetchClassifica() {
-            const { data: squadre, error } = await supabase
+            const { data: squadre, error } = await supabaseClient
                 .from('squadre')
                 .select('*')
                 .order('punti', { ascending: false });
@@ -95,7 +95,7 @@
 
         // Carica ultime partite in tempo reale
         function caricaPartite() {
-            supabase
+            supabaseClient
                 .channel('partite-channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'partite' }, () => fetchPartite())
                 .subscribe();
@@ -103,7 +103,7 @@
         }
 
         async function fetchPartite() {
-            const { data: partite, error } = await supabase
+            const { data: partite, error } = await supabaseClient
                 .from('partite')
                 .select(`
                     id,
@@ -132,9 +132,9 @@
             }
         }
 
-        // Carica classifica giocatori (voto medio)
+        // Carica classifica giocatori
         function caricaClassificaGiocatori() {
-            supabase
+            supabaseClient
                 .channel('giocatori-channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'giocatori' }, () => fetchGiocatori())
                 .subscribe();
@@ -142,7 +142,7 @@
         }
 
         async function fetchGiocatori() {
-            const { data: giocatori, error } = await supabase
+            const { data: giocatori, error } = await supabaseClient
                 .from('giocatori')
                 .select('nome, voto, squadre!inner(nome)')
                 .order('voto', { ascending: false });
