@@ -4,8 +4,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h2>Test Nuovo Progetto</h2>
-    <button onclick="test()">Test Connessione</button>
+    <h2>Test Funziona!</h2>
+    <button onclick="test()">CLICCA QUI</button>
     <div id="log" style="margin-top:20px; padding:10px; background:#f0f0f0;"></div>
 
     <script>
@@ -16,27 +16,15 @@
         const log = document.getElementById('log');
 
         async function test() {
-            log.innerHTML = '🟢 Test connessione...';
+            log.innerHTML = '🔵 Provo a connettermi...';
             
             try {
-                // Prova a leggere
                 const { data, error } = await supabase.from('squadre').select('*');
                 
                 if (error) {
-                    log.innerHTML = '❌ Errore lettura: ' + error.message;
+                    log.innerHTML = '❌ Errore: ' + error.message;
                 } else {
-                    log.innerHTML = '✅ Lettura OK! Dati: ' + JSON.stringify(data);
-                    
-                    // Prova a inserire
-                    const { error: insertError } = await supabase
-                        .from('squadre')
-                        .insert({ nome: 'Squadra Test', punti: 0, partite_giocate: 0, vinte: 0, perse: 0 });
-                    
-                    if (insertError) {
-                        log.innerHTML += '<br>❌ Errore inserimento: ' + insertError.message;
-                    } else {
-                        log.innerHTML += '<br>✅ Inserimento OK!';
-                    }
+                    log.innerHTML = '✅ Connesso! Dati: ' + JSON.stringify(data);
                 }
             } catch(e) {
                 log.innerHTML = '❌ Eccezione: ' + e.toString();
