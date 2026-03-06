@@ -43,6 +43,9 @@
         .riquadro {
             margin-bottom: 30px;
             padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         ul li {
             display: flex;
@@ -175,6 +178,7 @@
         // Funzione per mostrare messaggi
         function mostraMessaggio(testo, tipo = 'success') {
             const box = document.getElementById('messageBox');
+            if (!box) return;
             box.innerHTML = `<div class="alert-${tipo}">${testo}</div>`;
             setTimeout(() => { box.innerHTML = ''; }, 4000);
         }
@@ -185,6 +189,7 @@
             if (psw === '123') {
                 document.getElementById('password-protection').style.display = 'none';
                 document.getElementById('admin-content').style.display = 'block';
+                // Avvia il caricamento dei dati
                 caricaDatiAdmin();
                 mostraMessaggio('✅ Login effettuato');
             } else {
@@ -243,6 +248,7 @@
             });
         }
 
+        // Aggiorna la lista dei migliori giocatori in base alle squadre selezionate
         function aggiornaMigliorGiocatore() {
             const casaId = document.getElementById('squadraCasa').value;
             const ospiteId = document.getElementById('squadraOspite').value;
@@ -384,6 +390,7 @@
                 mostraMessaggio('✅ Partita registrata!');
 
             } catch (error) {
+                console.error(error);
                 mostraMessaggio('❌ Errore: ' + error.message, 'error');
             }
         }
@@ -483,12 +490,4 @@
                 await caricaSquadre();
                 await caricaGiocatori();
                 aggiornaListe();
-                mostraMessaggio('✅ Tutte le squadre eliminate!');
-            }
-        };
-
-        window.eliminaTuttiGiocatori = async () => {
-            if (confirm('ELIMINARE TUTTI I GIOCATORI?')) {
-                await supabaseClient.from('giocatori').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await caricaGiocatori();
-                
+                mostraMessaggio('✅ Tutte le squadre elimin
