@@ -232,7 +232,7 @@
                         <option value="">Miglior giocatore</option>
                     </select>
                     
-                    <input type="number" id="votoMigliore" placeholder="Voto (0-99)" min="0" max="99" step="1" required style="width: 100px;">
+                    <input type="number" id="punteggioMigliore" placeholder="Punteggio (0-99)" min="0" max="99" step="1" required style="width: 120px;">
                     
                     <button type="button" onclick="aggiungiPartita()">Registra</button>
                 </form>
@@ -304,7 +304,7 @@
         }
 
         async function caricaGiocatori() {
-            const { data } = await supabaseClient.from('giocatori').select('id, nome, voto_totale, partite_giocate, squadra_id');
+            const { data } = await supabaseClient.from('giocatori').select('id, nome, punteggio_totale, squadra_id');
             giocatori = data || [];
         }
 
@@ -359,8 +359,7 @@
             const select = document.getElementById('migliorGiocatore');
             select.innerHTML = '<option value="">Miglior giocatore</option>';
             filtrati.forEach(g => {
-                const media = g.partite_giocate > 0 ? (g.voto_totale / g.partite_giocate).toFixed(1) : 0;
-                select.innerHTML += `<option value="${g.id}">${g.nome} (media: ${media})</option>`;
+                select.innerHTML += `<option value="${g.id}">${g.nome} (punti: ${g.punteggio_totale})</option>`;
             });
         }
 
@@ -397,8 +396,7 @@
                 await supabaseClient.from('giocatori').insert({ 
                     nome, 
                     squadra_id: squadraId,
-                    voto_totale: 0,
-                    partite_giocate: 0
+                    punteggio_totale: 0
                 });
                 document.getElementById('nomeGiocatore').value = '';
                 await caricaGiocatori();
@@ -415,9 +413,9 @@
             const setCasa = parseInt(document.getElementById('setCasa').value);
             const setOspite = parseInt(document.getElementById('setOspite').value);
             const migliorId = document.getElementById('migliorGiocatore').value;
-            const votoMigliore = parseInt(document.getElementById('votoMigliore').value);
+            const punteggioMigliore = parseInt(document.getElementById('punteggioMigliore').value);
 
-            if (!casaId || !ospiteId || casaId === ospiteId || !migliorId || isNaN(votoMigliore)) {
+            if (!casaId || !ospiteId || casaId === ospiteId || !migliorId || isNaN(punteggioMigliore)) {
                 mostraMessaggio('❌ Dati incompleti o errati', 'error');
                 return;
             }
@@ -471,25 +469,21 @@
                     });
                 if (errPremio) throw errPremio;
 
-                // 3. Aggiorna voto totale del giocatore
+                // 3. Aggiorna punteggio totale del giocatore (SOMMA, non media)
                 const { data: giocatore, error: errGiocatore } = await supabaseClient
                     .from('giocatori')
-                    .select('voto_totale, partite_giocate')
+                    .select('punteggio_totale')
                     .eq('id', migliorId)
                     .single();
                 if (errGiocatore) throw errGiocatore;
 
-                const nuovoVotoTotale = (giocatore.voto_totale || 0) + votoMigliore;
-                const nuovePartiteGiocate = (giocatore.partite_giocate || 0) + 1;
+                const nuovoPunteggio = (giocatore.punteggio_totale || 0) + punteggioMigliore;
 
-                const { error: errVoto } = await supabaseClient
+                const { error: errPunteggio } = await supabaseClient
                     .from('giocatori')
-                    .update({ 
-                        voto_totale: nuovoVotoTotale,
-                        partite_giocate: nuovePartiteGiocate
-                    })
+                    .update({ punteggio_totale: nuovoPunteggio })
                     .eq('id', migliorId);
-                if (errVoto) throw errVoto;
+                if (errPunteggio) throw errPunteggio;
 
                 // 4. Aggiorna statistiche squadre
                 await aggiornaStatistiche(casaId, puntiCasa, setCasa > setOspite);
@@ -498,7 +492,7 @@
                 // 5. Pulisci form
                 document.getElementById('setCasa').value = '';
                 document.getElementById('setOspite').value = '';
-                document.getElementById('votoMigliore').value = '';
+                document.getElementById('punteggioMigliore').value = '';
                 document.getElementById('migliorGiocatore').innerHTML = '<option value="">Miglior giocatore</option>';
 
                 // 6. Ricarica dati e aggiorna UI
@@ -532,148 +526,4 @@
         // Funzioni di aggiornamento liste
         // ----------------------------------------------
         async function aggiornaListaSquadre() {
-            const { data } = await supabaseClient.from('squadre').select('*');
-            let html = '';
-            (data || []).forEach(s => {
-                html += `<li>
-                    <span><strong>${s.nome}</strong> (Punti: ${s.punti})</span>
-                    <button class="btn-danger btn-small" onclick="eliminaSquadra('${s.id}')">Elimina</button>
-                </li>`;
-            });
-            document.getElementById('listaSquadre').innerHTML = html;
-        }
-
-        async function aggiornaListaGiocatori() {
-            const { data } = await supabaseClient
-                .from('giocatori')
-                .select('id, nome, voto_totale, partite_giocate, squadre!inner(nome)')
-                .order('voto_totale', { ascending: false });
-            let html = '';
-            (data || []).forEach(g => {
-                const media = g.partite_giocate > 0 ? (g.voto_totale / g.partite_giocate).toFixed(1) : 0;
-                html += `<li>
-                    <span><strong>${g.nome}</strong> - Totale: ${g.voto_totale} (media: ${media}) - ${g.squadre.nome}</span>
-                    <button class="btn-danger btn-small" onclick="eliminaGiocatore('${g.id}')">Elimina</button>
-                </li>`;
-            });
-            document.getElementById('listaGiocatori').innerHTML = html;
-        }
-
-        async function aggiornaListaPartite() {
-            const { data } = await supabaseClient
-                .from('partite')
-                .select('id, set_casa, set_ospite, squadre!squadra_casa_id(nome), squadre!squadra_ospite_id(nome)')
-                .order('data', { ascending: false });
-            let html = '';
-            (data || []).forEach(p => {
-                html += `<li>
-                    <span><strong>${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome}</strong> (${p.set_casa}-${p.set_ospite})</span>
-                    <button class="btn-danger btn-small" onclick="eliminaPartita('${p.id}')">Elimina</button>
-                </li>`;
-            });
-            document.getElementById('listaPartite').innerHTML = html;
-        }
-
-        // ----------------------------------------------
-        // Eliminazioni
-        // ----------------------------------------------
-        window.eliminaSquadra = async (id) => {
-            if (!confirm('Sicuro di voler eliminare questa squadra?')) return;
-            try {
-                await supabaseClient.from('squadre').delete().eq('id', id);
-                await caricaSquadre();
-                await caricaGiocatori();
-                await aggiornaListe();
-                mostraMessaggio('✅ Squadra eliminata!');
-            } catch (error) {
-                mostraMessaggio('❌ Errore: ' + error.message, 'error');
-            }
-        };
-
-        window.eliminaGiocatore = async (id) => {
-            if (!confirm('Sicuro di voler eliminare questo giocatore?')) return;
-            try {
-                await supabaseClient.from('giocatori').delete().eq('id', id);
-                await caricaGiocatori();
-                await aggiornaListe();
-                mostraMessaggio('✅ Giocatore eliminato!');
-            } catch (error) {
-                mostraMessaggio('❌ Errore: ' + error.message, 'error');
-            }
-        };
-
-        window.eliminaPartita = async (id) => {
-            if (!confirm('Sicuro di voler eliminare questa partita?')) return;
-            try {
-                await supabaseClient.from('partite').delete().eq('id', id);
-                await aggiornaListe();
-                mostraMessaggio('✅ Partita eliminata!');
-            } catch (error) {
-                mostraMessaggio('❌ Errore: ' + error.message, 'error');
-            }
-        };
-
-        window.eliminaTutteSquadre = async () => {
-            if (!confirm('ELIMINARE TUTTE LE SQUADRE? (Verranno eliminati anche giocatori e partite)')) return;
-            try {
-                await supabaseClient.from('premi').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await supabaseClient.from('partite').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await supabaseClient.from('giocatori').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await supabaseClient.from('squadre').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await caricaSquadre();
-                await caricaGiocatori();
-                await aggiornaListe();
-                mostraMessaggio('✅ Tutte le squadre eliminate!');
-            } catch (error) {
-                mostraMessaggio('❌ Errore: ' + error.message, 'error');
-            }
-        };
-
-        window.eliminaTuttiGiocatori = async () => {
-            if (!confirm('ELIMINARE TUTTI I GIOCATORI?')) return;
-            try {
-                await supabaseClient.from('giocatori').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await caricaGiocatori();
-                await aggiornaListe();
-                mostraMessaggio('✅ Tutti i giocatori eliminati!');
-            } catch (error) {
-                mostraMessaggio('❌ Errore: ' + error.message, 'error');
-            }
-        };
-
-        window.eliminaTuttePartite = async () => {
-            if (!confirm('ELIMINARE TUTTE LE PARTITE?')) return;
-            try {
-                await supabaseClient.from('premi').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await supabaseClient.from('partite').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await aggiornaListe();
-                mostraMessaggio('✅ Tutte le partite eliminate!');
-            } catch (error) {
-                mostraMessaggio('❌ Errore: ' + error.message, 'error');
-            }
-        };
-
-        window.eliminaTutto = async () => {
-            if (!confirm('⚠️ STAI PER ELIMINARE TUTTI I DATI. SEI SICURO?')) return;
-            try {
-                await supabaseClient.from('premi').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await supabaseClient.from('partite').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await supabaseClient.from('giocatori').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await supabaseClient.from('squadre').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                await caricaSquadre();
-                await caricaGiocatori();
-                await aggiornaListe();
-                mostraMessaggio('✅ Tutto eliminato!');
-            } catch (error) {
-                mostraMessaggio('❌ Errore: ' + error.message, 'error');
-            }
-        };
-
-        // ----------------------------------------------
-        // Event listeners per il miglior giocatore
-        // ----------------------------------------------
-        document.getElementById('squadraCasa')?.addEventListener('change', aggiornaMigliorGiocatore);
-        document.getElementById('squadraOspite')?.addEventListener('change', aggiornaMigliorGiocatore);
-    </script>
-</body>
-</html>
+            const { data } = await supabaseClient.from('squadre').select(
