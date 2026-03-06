@@ -18,7 +18,7 @@
             display: flex;
             flex-direction: column;
             max-width: 1400px;
-            margin: 20px auto;
+            margin: 10px auto;  /* Ridotto da 20px a 10px per alzare i box */
             padding: 0 20px;
             width: 100%;
             box-sizing: border-box;
@@ -28,13 +28,13 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;  /* Leggermente ridotto */
         }
         
         .bottom-row {
             display: flex;
             justify-content: center;
-            margin-top: 20px;
+            margin-top: 10px;  /* Ridotto */
         }
         
         .riquadro {
@@ -244,6 +244,7 @@
             if (error) console.error(error);
             else {
                 let html = '';
+                // Per ogni partita, cerchiamo il premio (miglior giocatore)
                 for (const p of partite) {
                     const data = new Date(p.data).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
                     
