@@ -127,7 +127,7 @@
                 <button class="btn-danger" onclick="eliminaTutteSquadre()">🗑️ Elimina TUTTE le squadre</button>
             </section>
 
-            <!-- Gestione Giocatori -->
+            <!-- Gestione Giocatori (SENZA VOTO) -->
             <section class="riquadro">
                 <h2>👤 Gestione Giocatori</h2>
                 <form id="formGiocatore" onsubmit="return false;">
@@ -135,7 +135,7 @@
                     <select id="squadraGiocatore" required style="min-width: 150px;">
                         <option value="">Seleziona squadra</option>
                     </select>
-                    <input type="number" id="votoGiocatore" placeholder="Voto (0-99)" min="0" max="99" step="1" required style="width: 100px;">
+                    <!-- Campo voto rimosso -->
                     <button type="button" onclick="aggiungiGiocatore()">Aggiungi</button>
                 </form>
                 <h3>Elenco Giocatori</h3>
@@ -188,7 +188,7 @@
             setTimeout(() => { box.innerHTML = ''; }, 4000);
         }
 
-        // Verifica password (chiamata dall'event listener)
+        // Verifica password
         function verificaPassword() {
             const psw = document.getElementById('password-input').value;
             if (psw === '123') {
@@ -201,7 +201,7 @@
             }
         }
 
-        // Listener per il pulsante di login (garantisce la clickabilità)
+        // Listener per il pulsante di login
         document.addEventListener('DOMContentLoaded', function() {
             const loginBtn = document.getElementById('login-button');
             if (loginBtn) {
@@ -220,7 +220,7 @@
         async function caricaDatiAdmin() {
             await caricaSquadre();
             await caricaGiocatori();
-            aggiornaListe();
+            await aggiornaListe();
         }
 
         async function caricaSquadre() {
@@ -233,10 +233,11 @@
             giocatori = data || [];
         }
 
-        function aggiornaListe() {
-            aggiornaListaSquadre();
-            aggiornaListaGiocatori();
-            aggiornaListaPartite();
+        // Funzione aggiornaListe ora è async e attende le sotto-funzioni
+        async function aggiornaListe() {
+            await aggiornaListaSquadre();
+            await aggiornaListaGiocatori();
+            await aggiornaListaPartite();
             aggiornaSelect();
         }
 
@@ -303,31 +304,30 @@
             document.getElementById('nomeSquadra').value = '';
             await caricaSquadre();
             aggiornaSelect();
-            aggiornaListaSquadre();
+            await aggiornaListaSquadre();
             mostraMessaggio('✅ Squadra aggiunta!');
         }
 
-        // AGGIUNGI GIOCATORE
+        // AGGIUNGI GIOCATORE (SENZA VOTO)
         async function aggiungiGiocatore() {
             const nome = document.getElementById('nomeGiocatore').value.trim();
             const squadraId = document.getElementById('squadraGiocatore').value;
-            const voto = parseInt(document.getElementById('votoGiocatore').value);
             
-            if (!nome || !squadraId || isNaN(voto)) {
+            if (!nome || !squadraId) {
                 mostraMessaggio('❌ Compila tutti i campi', 'error');
                 return;
             }
             
+            // Inserisce il giocatore con voto null (o default 0, ma il database ha default 0)
             await supabaseClient.from('giocatori').insert({ 
                 nome, 
-                squadra_id: squadraId, 
-                voto: voto 
+                squadra_id: squadraId
+                // nessun voto, il database metterà 0 di default
             });
             
             document.getElementById('nomeGiocatore').value = '';
-            document.getElementById('votoGiocatore').value = '';
             await caricaGiocatori();
-            aggiornaListaGiocatori();
+            await aggiornaListaGiocatori();
             mostraMessaggio('✅ Giocatore aggiunto!');
         }
 
@@ -408,7 +408,7 @@
                 
                 await caricaSquadre();
                 await caricaGiocatori();
-                aggiornaListe();
+                await aggiornaListe();  // ora con await
                 mostraMessaggio('✅ Partita registrata!');
 
             } catch (error) {
@@ -432,7 +432,7 @@
             }).eq('id', squadraId);
         }
 
-        // Funzioni di aggiornamento liste
+        // Funzioni di aggiornamento liste (ora tutte con await)
         async function aggiornaListaSquadre() {
             const { data: squadre } = await supabaseClient.from('squadre').select('*');
             let html = '';
@@ -481,7 +481,7 @@
                 await supabaseClient.from('squadre').delete().eq('id', id);
                 await caricaSquadre();
                 await caricaGiocatori();
-                aggiornaListe();
+                await aggiornaListe();
                 mostraMessaggio('✅ Squadra eliminata!');
             }
         };
@@ -490,7 +490,7 @@
             if (confirm('Sicuro?')) {
                 await supabaseClient.from('giocatori').delete().eq('id', id);
                 await caricaGiocatori();
-                aggiornaListaGiocatori();
+                await aggiornaListaGiocatori();
                 mostraMessaggio('✅ Giocatore eliminato!');
             }
         };
@@ -498,7 +498,7 @@
         window.eliminaPartita = async (id) => {
             if (confirm('Sicuro?')) {
                 await supabaseClient.from('partite').delete().eq('id', id);
-                aggiornaListaPartite();
+                await aggiornaListaPartite();
                 mostraMessaggio('✅ Partita eliminata!');
             }
         };
@@ -511,7 +511,7 @@
                 await supabaseClient.from('squadre').delete().neq('id', '00000000-0000-0000-0000-000000000000');
                 await caricaSquadre();
                 await caricaGiocatori();
-                aggiornaListe();
+                await aggiornaListe();
                 mostraMessaggio('✅ Tutte le squadre eliminate!');
             }
         };
@@ -520,7 +520,7 @@
             if (confirm('ELIMINARE TUTTI I GIOCATORI?')) {
                 await supabaseClient.from('giocatori').delete().neq('id', '00000000-0000-0000-0000-000000000000');
                 await caricaGiocatori();
-                aggiornaListaGiocatori();
+                await aggiornaListaGiocatori();
                 mostraMessaggio('✅ Tutti i giocatori eliminati!');
             }
         };
@@ -529,7 +529,7 @@
             if (confirm('ELIMINARE TUTTE LE PARTITE?')) {
                 await supabaseClient.from('premi').delete().neq('id', '00000000-0000-0000-0000-000000000000');
                 await supabaseClient.from('partite').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                aggiornaListaPartite();
+                await aggiornaListaPartite();
                 mostraMessaggio('✅ Tutte le partite eliminate!');
             }
         };
@@ -542,7 +542,7 @@
                 await supabaseClient.from('squadre').delete().neq('id', '00000000-0000-0000-0000-000000000000');
                 await caricaSquadre();
                 await caricaGiocatori();
-                aggiornaListe();
+                await aggiornaListe();
                 mostraMessaggio('✅ Tutto eliminato!');
             }
         };
