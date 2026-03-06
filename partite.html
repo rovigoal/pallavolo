@@ -10,11 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(145deg, #f6f9fc 0%, #e6f0f5 100%);
@@ -27,14 +23,8 @@
             padding: 1.5rem 2rem;
             box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.3);
         }
-        header h1 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        nav {
-            margin-top: 0.8rem;
-        }
+        header h1 { font-size: 2.2rem; }
+        nav { margin-top: 0.8rem; }
         nav a {
             color: white;
             margin-right: 2rem;
@@ -42,30 +32,22 @@
             font-weight: 500;
             padding: 0.4rem 0;
             border-bottom: 2px solid transparent;
-            transition: 0.2s;
         }
-        nav a:hover {
-            border-bottom-color: white;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
+        nav a:hover { border-bottom-color: white; }
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 2rem; }
         .card {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(10px);
             border-radius: 24px;
             padding: 1.5rem;
-            box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(249, 115, 22, 0.1) inset;
+            box-shadow: 0 20px 35px -8px rgba(0,0,0,0.1), 0 0 0 1px rgba(249,115,22,0.1) inset;
         }
         .card h2 {
             font-size: 1.5rem;
-            font-weight: 600;
             color: #f97316;
-            margin-bottom: 1.5rem;
             border-bottom: 2px solid #f97316;
             padding-bottom: 0.75rem;
+            margin-bottom: 1.5rem;
         }
         .partita-item {
             background: #f8fafc;
@@ -73,15 +55,6 @@
             padding: 1rem;
             margin-bottom: 1rem;
             border-left: 4px solid #f97316;
-            transition: 0.2s;
-        }
-        .partita-item:hover {
-            background: #fff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        .partita-item strong {
-            font-size: 1.1rem;
-            color: #0f172a;
         }
         .partita-risultato {
             font-size: 1.5rem;
@@ -89,29 +62,8 @@
             color: #f97316;
             margin: 0.3rem 0;
         }
-        .partita-data {
-            color: #64748b;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-        .partita-mvp {
-            margin-top: 0.5rem;
-            padding-top: 0.5rem;
-            border-top: 1px dashed #cbd5e1;
-            font-size: 1rem;
-            color: #475569;
-        }
-        .badge {
-            background: #f97316;
-            color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-left: 0.5rem;
-        }
+        .partita-data { color: #64748b; font-size: 0.9rem; }
+        .partita-mvp { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed #cbd5e1; }
         .pagination {
             display: flex;
             justify-content: center;
@@ -126,25 +78,9 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            font-size: 1.2rem;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
         }
-        .pagination button:hover:not(:disabled) {
-            background: #ea580c;
-            transform: scale(1.1);
-        }
-        .pagination button:disabled {
-            background: #cbd5e1;
-            cursor: not-allowed;
-        }
-        .pagination span {
-            font-weight: 600;
-            color: #334155;
-        }
+        .pagination button:disabled { background: #cbd5e1; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -153,6 +89,7 @@
         <nav>
             <a href="main.html">← Home</a>
             <a href="admin.html">Admin</a>
+            <a href="inserisci-partite.html">➕ Inserisci Partite</a>
         </nav>
     </header>
 
@@ -169,117 +106,79 @@
     </div>
 
     <script>
-        const listaPartiteDiv = document.getElementById('listaPartite');
         let tutteLePartite = [];
         let paginaCorrente = 0;
         const partitePerPagina = 5;
 
-        function caricaPartite() {
-            supabaseClient
-                .channel('partite-channel')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'partite' }, () => {
-                    fetchTuttePartite();
-                })
-                .subscribe();
-            fetchTuttePartite();
-        }
+        async function caricaPartite() {
+            const { data: partite, error } = await supabaseClient
+                .from('partite')
+                .select(`
+                    id,
+                    set_casa,
+                    set_ospite,
+                    created_at,
+                    squadre!squadra_casa_id (nome),
+                    squadre!squadra_ospite_id (nome)
+                `)
+                .order('created_at', { ascending: false });
+            if (error) return console.error(error);
 
-        async function fetchTuttePartite() {
-            try {
-                const { data: partite, error } = await supabaseClient
-                    .from('partite')
-                    .select(`
-                        id,
-                        set_casa,
-                        set_ospite,
-                        data,
-                        squadre!squadra_casa_id (nome),
-                        squadre!squadra_ospite_id (nome)
-                    `)
-                    .order('data', { ascending: false });
-
-                if (error) {
-                    console.error('ERRORE partite:', error);
-                    return;
+            // Aggiungi MVP
+            for (let p of partite) {
+                const { data: premi } = await supabaseClient
+                    .from('premi')
+                    .select('giocatori(nome), voto')
+                    .eq('partita_id', p.id);
+                if (premi && premi.length) {
+                    p.mvp_nome = premi[0].giocatori.nome;
+                    p.voto = premi[0].voto;
                 }
-
-                // Recupera MVP per ogni partita
-                for (let p of partite) {
-                    const { data: premi } = await supabaseClient
-                        .from('premi')
-                        .select('giocatore_id')
-                        .eq('partita_id', p.id);
-                    
-                    if (premi && premi.length > 0) {
-                        const { data: giocatore } = await supabaseClient
-                            .from('giocatori')
-                            .select('nome, punteggio_totale')
-                            .eq('id', premi[0].giocatore_id)
-                            .single();
-                        if (giocatore) {
-                            p.mvp_nome = giocatore.nome;
-                        }
-                    }
-                }
-
-                tutteLePartite = partite || [];
-                paginaCorrente = 0;
-                aggiornaPaginazione();
-                mostraPaginaCorrente();
-
-            } catch (e) {
-                console.error('ECCEZIONE:', e);
             }
+            tutteLePartite = partite || [];
+            paginaCorrente = 0;
+            mostraPagina();
         }
 
-        function mostraPaginaCorrente() {
+        function mostraPagina() {
             const inizio = paginaCorrente * partitePerPagina;
             const fine = inizio + partitePerPagina;
-            const partiteDaMostrare = tutteLePartite.slice(inizio, fine);
+            const partite = tutteLePartite.slice(inizio, fine);
 
             let html = '';
-            if (partiteDaMostrare.length === 0) {
+            if (partite.length === 0) {
                 html = '<p style="color: #64748b; text-align: center;">Nessuna partita registrata</p>';
             } else {
-                partiteDaMostrare.forEach(p => {
-                    const data = new Date(p.data).toLocaleDateString('it-IT', { 
-                        day: '2-digit', 
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-
-                    let mvpText = '';
-                    if (p.mvp_nome) {
-                        mvpText = `<div class="partita-mvp">⭐ MVP: ${p.mvp_nome}</div>`;
-                    }
-
+                partite.forEach(p => {
+                    const data = p.created_at ? new Date(p.created_at).toLocaleString('it-IT') : '';
                     html += `<div class="partita-item">
                         <strong>${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome}</strong>
                         <div class="partita-risultato">${p.set_casa} - ${p.set_ospite}</div>
                         <div class="partita-data">📅 ${data}</div>
-                        ${mvpText}
+                        ${p.mvp_nome ? `<div class="partita-mvp">⭐ MVP: ${p.mvp_nome} (voto ${p.voto})</div>` : ''}
                     </div>`;
                 });
             }
-
-            listaPartiteDiv.innerHTML = html;
+            document.getElementById('listaPartite').innerHTML = html;
             aggiornaPaginazione();
         }
 
         function aggiornaPaginazione() {
-            const totalePagine = Math.ceil(tutteLePartite.length / partitePerPagina);
-            document.getElementById('pageInfo').textContent = `Pagina ${paginaCorrente + 1} di ${totalePagine || 1}`;
-            
+            const totale = Math.ceil(tutteLePartite.length / partitePerPagina) || 1;
+            document.getElementById('pageInfo').textContent = `Pagina ${paginaCorrente + 1} di ${totale}`;
             document.getElementById('prevPage').disabled = paginaCorrente === 0;
-            document.getElementById('nextPage').disabled = paginaCorrente >= totalePagine - 1;
+            document.getElementById('nextPage').disabled = paginaCorrente >= totale - 1;
         }
 
-        window.cambiaPagina = function(direzione) {
-            paginaCorrente += direzione;
-            mostraPaginaCorrente();
+        window.cambiaPagina = (dir) => {
+            paginaCorrente += dir;
+            mostraPagina();
         };
+
+        // Aggiornamento in tempo reale
+        supabaseClient.channel('partite')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'partite' }, caricaPartite)
+            .subscribe();
 
         caricaPartite();
     </script>
