@@ -124,6 +124,7 @@
             setTimeout(() => msg.style.display = 'none', 4000);
         }
 
+        // Carica squadre per i select
         async function loadSquadre() {
             const { data, error } = await supabaseClient.from('squadre').select('id, nome').order('nome');
             if (error) return console.error(error);
@@ -137,43 +138,60 @@
             });
         }
 
+        // Carica giocatori per il select miglior giocatore
         async function loadGiocatori() {
             const { data, error } = await supabaseClient
                 .from('giocatori')
-                .select('id, nome, cognome, squadre!inner(nome)')
+                .select('id, nome, cognome, squadra_id')
                 .order('cognome');
             if (error) return console.error(error);
             const select = document.getElementById('miglior_giocatore');
             select.innerHTML = '<option value="">Seleziona</option>';
+            // Per ogni giocatore, dobbiamo ottenere il nome della squadra (facciamo una seconda chiamata? meglio una join)
+            // Invece facciamo una query separata per le squadre e costruiamo una mappa
+            const { data: squadre, error: errS } = await supabaseClient.from('squadre').select('id, nome');
+            if (errS) return console.error(errS);
+            const squadreMap = {};
+            squadre.forEach(s => squadreMap[s.id] = s.nome);
+
             data.forEach(g => {
                 const opt = document.createElement('option');
                 opt.value = g.id;
-                opt.textContent = `${g.cognome} ${g.nome} (${g.squadre.nome})`;
+                opt.textContent = `${g.cognome} ${g.nome} (${squadreMap[g.squadra_id] || '?'})`;
                 select.appendChild(opt);
             });
         }
 
+        // Carica partite e arricchisce con i nomi delle squadre e del giocatore
         async function loadPartite() {
-            const { data, error } = await supabaseClient
+            // Ottieni tutte le partite
+            const { data: partite, error } = await supabaseClient
                 .from('partite')
-                .select(`
-                    id, set_casa, set_ospite, data, punti_miglior_giocatore,
-                    squadre_casa!squadra_casa_id (nome),
-                    squadre_ospite!squadra_ospite_id (nome),
-                    giocatori (nome, cognome)
-                `)
+                .select('*')
                 .order('data', { ascending: false });
             if (error) return console.error(error);
+
+            // Ottieni tutte le squadre e giocatori per arricchire
+            const { data: squadre, error: errS } = await supabaseClient.from('squadre').select('id, nome');
+            if (errS) return console.error(errS);
+            const squadreMap = {};
+            squadre.forEach(s => squadreMap[s.id] = s.nome);
+
+            const { data: giocatori, error: errG } = await supabaseClient.from('giocatori').select('id, nome, cognome');
+            if (errG) return console.error(errG);
+            const giocatoriMap = {};
+            giocatori.forEach(g => giocatoriMap[g.id] = `${g.nome} ${g.cognome}`);
+
             const tbody = document.getElementById('listaPartite');
             tbody.innerHTML = '';
-            data.forEach(p => {
+            partite.forEach(p => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${p.squadre_casa.nome}</td>
-                    <td>${p.squadre_ospite.nome}</td>
+                    <td>${squadreMap[p.squadra_casa_id] || '?'}</td>
+                    <td>${squadreMap[p.squadra_ospite_id] || '?'}</td>
                     <td>${p.set_casa} - ${p.set_ospite}</td>
                     <td>${p.data}</td>
-                    <td>${p.giocatori ? `${p.giocatori.nome} ${p.giocatori.cognome}` : '-'}</td>
+                    <td>${giocatoriMap[p.miglior_giocatore_id] || '-'}</td>
                     <td>${p.punti_miglior_giocatore ?? '-'}</td>
                     <td><button class="btn-small btn-danger" onclick="cancellaPartita(${p.id})">Cancella</button></td>
                 `;
