@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <style>
+        /* (stili invariati, identici a prima) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #1e293b; }
         header { background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); color: white; padding: 1.5rem 2rem; }
@@ -215,7 +216,6 @@
             document.getElementById('listaPartite').innerHTML = html;
         }
 
-        // Funzione per calcolare punti in base al risultato
         function calcolaPunti(setCasa, setOspite) {
             if (setCasa > setOspite) {
                 if (setCasa === 3 && (setOspite === 0 || setOspite === 1)) return [3, 0];
@@ -226,7 +226,7 @@
                 else if (setOspite === 3 && setCasa === 2) return [1, 2];
                 else return null;
             }
-            return null; // pareggio non valido
+            return null;
         }
 
         async function aggiungiPartita() {
@@ -236,6 +236,8 @@
             const setOspite = parseInt(document.getElementById('setOspite').value);
             const migliorId = document.getElementById('migliorGiocatore').value;
             const punteggioMigliore = parseInt(document.getElementById('punteggioMigliore').value);
+
+            console.log('Aggiungi partita:', { casaId, ospiteId, setCasa, setOspite, migliorId, punteggioMigliore });
 
             if (!casaId || !ospiteId || casaId === ospiteId || !migliorId || isNaN(punteggioMigliore)) {
                 mostraMessaggio('❌ Dati incompleti o errati', 'error');
@@ -262,6 +264,7 @@
                     })
                     .select();
                 if (errPartita) throw errPartita;
+                console.log('Partita inserita:', partita);
 
                 // Inserisci premio con punti
                 const { error: errPremio } = await supabaseClient
@@ -272,7 +275,11 @@
                         punti: punteggioMigliore,
                         data: new Date()
                     });
-                if (errPremio) throw errPremio;
+                if (errPremio) {
+                    console.error('Errore inserimento premio:', errPremio);
+                    throw errPremio;
+                }
+                console.log('Premio inserito');
 
                 // Aggiorna punteggio totale giocatore
                 const { data: giocatore, error: errGioc } = await supabaseClient
@@ -284,10 +291,12 @@
 
                 const nuovoPunteggio = (giocatore.punteggio_totale || 0) + punteggioMigliore;
                 await supabaseClient.from('giocatori').update({ punteggio_totale: nuovoPunteggio }).eq('id', migliorId);
+                console.log('Punteggio giocatore aggiornato');
 
                 // Aggiorna statistiche squadre
                 await aggiornaStatistiche(casaId, puntiCasa, setCasa > setOspite);
                 await aggiornaStatistiche(ospiteId, puntiOspite, setOspite > setCasa);
+                console.log('Statistiche squadre aggiornate');
 
                 // Pulisci form
                 document.getElementById('setCasa').value = '';
@@ -302,7 +311,7 @@
 
                 mostraMessaggio(`✅ Partita registrata!`);
             } catch (error) {
-                console.error(error);
+                console.error('Errore in aggiungiPartita:', error);
                 mostraMessaggio('❌ Errore: ' + error.message, 'error');
             }
         }
@@ -322,7 +331,6 @@
             }).eq('id', squadraId);
         }
 
-        // Funzione per sottrarre statistiche (usata in modifica/elimina)
         async function sottraiStatistiche(squadraId, punti, vinta) {
             const { data: squadra, error } = await supabaseClient
                 .from('squadre')
@@ -338,10 +346,8 @@
             }).eq('id', squadraId);
         }
 
-        // Modifica partita: carica i dati nel form di modifica
         window.modificaPartita = async (id) => {
             try {
-                // Recupera partita
                 const { data: partita, error: errPartita } = await supabaseClient
                     .from('partite')
                     .select('*')
@@ -349,7 +355,6 @@
                     .single();
                 if (errPartita) throw errPartita;
 
-                // Recupera premio associato
                 const { data: premi, error: errPremi } = await supabaseClient
                     .from('premi')
                     .select('giocatore_id, punti')
@@ -358,7 +363,6 @@
 
                 const premio = premi && premi.length > 0 ? premi[0] : null;
 
-                // Popola form di modifica
                 document.getElementById('editPartitaId').value = partita.id;
                 document.getElementById('editSquadraCasa').value = partita.squadra_casa_id;
                 document.getElementById('editSquadraOspite').value = partita.squadra_ospite_id;
@@ -366,16 +370,12 @@
                 document.getElementById('editSetOspite').value = partita.set_ospite;
                 document.getElementById('editPunteggioMigliore').value = premio ? premio.punti : '';
 
-                // Aggiorna select MVP in base alle squadre selezionate
                 aggiornaMigliorGiocatoreModifica();
-                // Imposta il giocatore selezionato
                 if (premio) {
                     document.getElementById('editMigliorGiocatore').value = premio.giocatore_id;
                 }
 
-                // Mostra form di modifica
                 document.getElementById('editFormContainer').style.display = 'block';
-                // Nascondi eventualmente il form di inserimento? (opzionale)
             } catch (error) {
                 console.error(error);
                 mostraMessaggio('❌ Errore nel caricamento dei dati: ' + error.message, 'error');
@@ -409,7 +409,6 @@
             const [nuoviPuntiCasa, nuoviPuntiOspite] = nuoviPunti;
 
             try {
-                // Recupera i vecchi dati della partita e del premio
                 const { data: vecchiaPartita, error: errVecchia } = await supabaseClient
                     .from('partite')
                     .select('*')
@@ -425,28 +424,27 @@
 
                 const vecchioPremio = vecchiPremi && vecchiPremi.length > 0 ? vecchiPremi[0] : null;
 
-                // Calcola vecchi punti squadre
                 const vecchiPunti = calcolaPunti(vecchiaPartita.set_casa, vecchiaPartita.set_ospite);
                 if (!vecchiPunti) throw new Error('Vecchi punti non validi');
                 const [vecchiPuntiCasa, vecchiPuntiOspite] = vecchiPunti;
 
-                // Sottrai vecchi punti da squadre e vecchio MVP
+                // Sottrai vecchi punti
                 await sottraiStatistiche(vecchiaPartita.squadra_casa_id, vecchiPuntiCasa, vecchiaPartita.set_casa > vecchiaPartita.set_ospite);
                 await sottraiStatistiche(vecchiaPartita.squadra_ospite_id, vecchiPuntiOspite, vecchiaPartita.set_ospite > vecchiaPartita.set_casa);
 
-                if (vecchioPremio) {
+                if (vecchioPremio && vecchioPremio.punti) {
                     const { data: vecchioGiocatore, error: errVecchioGioc } = await supabaseClient
                         .from('giocatori')
                         .select('punteggio_totale')
                         .eq('id', vecchioPremio.giocatore_id)
                         .single();
                     if (!errVecchioGioc && vecchioGiocatore) {
-                        const nuovoPunteggioVecchio = (vecchioGiocatore.punteggio_totale || 0) - (vecchioPremio.punti || 0);
+                        const nuovoPunteggioVecchio = (vecchioGiocatore.punteggio_totale || 0) - vecchioPremio.punti;
                         await supabaseClient.from('giocatori').update({ punteggio_totale: nuovoPunteggioVecchio }).eq('id', vecchioPremio.giocatore_id);
                     }
                 }
 
-                // Aggiorna la partita
+                // Aggiorna partita
                 const { error: errAggPartita } = await supabaseClient
                     .from('partite')
                     .update({
@@ -458,7 +456,7 @@
                     .eq('id', id);
                 if (errAggPartita) throw errAggPartita;
 
-                // Aggiorna il premio (se esiste) o inseriscilo
+                // Aggiorna premio
                 if (vecchioPremio) {
                     const { error: errAggPremio } = await supabaseClient
                         .from('premi')
@@ -490,11 +488,10 @@
                 const nuovoPunteggioNuovo = (nuovoGiocatore.punteggio_totale || 0) + punteggioMigliore;
                 await supabaseClient.from('giocatori').update({ punteggio_totale: nuovoPunteggioNuovo }).eq('id', migliorId);
 
-                // Aggiungi nuovi punti alle squadre
+                // Aggiungi nuovi punti squadre
                 await aggiornaStatistiche(casaId, nuoviPuntiCasa, setCasa > setOspite);
                 await aggiornaStatistiche(ospiteId, nuoviPuntiOspite, setOspite > setCasa);
 
-                // Ricarica dati e nascondi form
                 await caricaGiocatori();
                 await aggiornaListaPartite();
                 annullaModifica();
@@ -509,22 +506,22 @@
             if (!confirm('Eliminare questa partita?')) return;
             
             try {
-                // Recupera i dati della partita
+                console.log('Eliminazione partita:', id);
                 const { data: partita, error: errPartita } = await supabaseClient
                     .from('partite')
                     .select('*')
                     .eq('id', id)
                     .single();
                 if (errPartita) throw errPartita;
+                console.log('Partita trovata:', partita);
                 
-                // Recupera il premio associato
                 const { data: premi, error: errPremi } = await supabaseClient
                     .from('premi')
                     .select('giocatore_id, punti')
                     .eq('partita_id', id);
                 if (errPremi) throw errPremi;
+                console.log('Premi trovati:', premi);
                 
-                // Sottrai punti dal giocatore MVP
                 if (premi && premi.length > 0) {
                     const premio = premi[0];
                     if (premio.punti) {
@@ -540,26 +537,27 @@
                             .from('giocatori')
                             .update({ punteggio_totale: nuovoPunteggio })
                             .eq('id', premio.giocatore_id);
+                        console.log('Punti giocatore sottratti');
                     }
                 }
                 
-                // Calcola punti da sottrarre alle squadre
                 const punti = calcolaPunti(partita.set_casa, partita.set_ospite);
                 if (punti) {
                     const [puntiCasa, puntiOspite] = punti;
                     await sottraiStatistiche(partita.squadra_casa_id, puntiCasa, partita.set_casa > partita.set_ospite);
                     await sottraiStatistiche(partita.squadra_ospite_id, puntiOspite, partita.set_ospite > partita.set_casa);
+                    console.log('Statistiche squadre sottratte');
                 }
                 
-                // Elimina premio e partita
                 await supabaseClient.from('premi').delete().eq('partita_id', id);
                 await supabaseClient.from('partite').delete().eq('id', id);
+                console.log('Record eliminati');
                 
                 await aggiornaListaPartite();
                 mostraMessaggio('✅ Partita eliminata e punti aggiornati!');
                 
             } catch (error) {
-                console.error(error);
+                console.error('Errore in eliminaPartita:', error);
                 mostraMessaggio('❌ Errore: ' + error.message, 'error');
             }
         };
@@ -572,11 +570,11 @@
                 await aggiornaListaPartite();
                 mostraMessaggio('✅ Tutte le partite eliminate!');
             } catch (error) {
+                console.error(error);
                 mostraMessaggio('❌ Errore: ' + error.message, 'error');
             }
         };
 
-        // Event listeners per i select dinamici
         document.getElementById('squadraCasa')?.addEventListener('change', aggiornaMigliorGiocatore);
         document.getElementById('squadraOspite')?.addEventListener('change', aggiornaMigliorGiocatore);
         document.getElementById('editSquadraCasa')?.addEventListener('change', aggiornaMigliorGiocatoreModifica);
