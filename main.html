@@ -186,14 +186,42 @@
             margin-left: 0.5rem;
         }
 
-        .debug-info {
-            background: #f1f5f9;
-            padding: 1rem;
-            border-radius: 12px;
-            margin-top: 1rem;
-            font-size: 0.8rem;
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .pagination button {
+            background: #f97316;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #ea580c;
+            transform: scale(1.1);
+        }
+
+        .pagination button:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            font-weight: 600;
             color: #334155;
-            border: 1px solid #cbd5e1;
         }
 
         @media (max-width: 1000px) {
@@ -222,7 +250,7 @@
                     <tr>
                         <th>Giocatore</th>
                         <th>Squadra</th>
-                        <th>Voto</th>
+                        <th>Media</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -245,11 +273,15 @@
             </table>
         </div>
 
-        <!-- COLONNA DESTRA: Ultime Partite -->
+        <!-- COLONNA DESTRA: Ultime Partite con paginazione -->
         <div class="card">
             <h2>⚡ Ultime Partite</h2>
             <div id="listaPartite"></div>
-            <div id="debugPartite" class="debug-info" style="display: none;"></div>
+            <div class="pagination">
+                <button id="prevPage" onclick="cambiaPagina(-1)" disabled>←</button>
+                <span id="pageInfo">Pagina 1</span>
+                <button id="nextPage" onclick="cambiaPagina(1)" disabled>→</button>
+            </div>
         </div>
     </div>
 
@@ -257,18 +289,13 @@
         const tabellaGiocatori = document.querySelector('#tabellaGiocatori tbody');
         const tabellaSquadre = document.querySelector('#tabellaClassifica tbody');
         const listaPartiteDiv = document.getElementById('listaPartite');
-        const debugDiv = document.getElementById('debugPartite');
+        
+        // Variabili per la paginazione
+        let tutteLePartite = [];
+        let paginaCorrente = 0;
+        const partitePerPagina = 3;
 
-        // Funzione di debug
-        function debug(msg) {
-            console.log(msg);
-            if (debugDiv) {
-                debugDiv.style.display = 'block';
-                debugDiv.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + msg;
-            }
-        }
-
-        // ---------- CLASSIFICA GIOCATORI ----------
+        // ---------- CLASSIFICA GIOCATORI (con media) ----------
         function caricaGiocatori() {
             supabaseClient
                 .channel('giocatori-channel')
@@ -278,26 +305,25 @@
         }
 
         async function fetchGiocatori() {
-            debug('Caricamento giocatori...');
             const { data: giocatori, error } = await supabaseClient
                 .from('giocatori')
-                .select('nome, voto, squadre!inner(nome)')
-                .order('voto', { ascending: false })
+                .select('nome, voto_totale, partite_giocate, squadre!inner(nome)')
+                .order('voto_totale', { ascending: false })
                 .limit(20);
 
             if (error) {
-                debug('ERRORE giocatori: ' + error.message);
+                console.error('ERRORE giocatori:', error);
                 return;
             }
 
-            debug('Giocatori caricati: ' + giocatori.length);
             let html = '';
             giocatori.forEach(g => {
-                const classeVoto = g.voto > 80 ? 'voto-alto' : 'voto-medio';
+                const media = g.partite_giocate > 0 ? (g.voto_totale / g.partite_giocate).toFixed(1) : 0;
+                const classeVoto = media > 80 ? 'voto-alto' : 'voto-medio';
                 html += `<tr>
                     <td class="squadra-nome">${g.nome}</td>
                     <td>${g.squadre.nome}</td>
-                    <td class="${classeVoto}">${g.voto ?? 0}</td>
+                    <td class="${classeVoto}">${media}</td>
                 </tr>`;
             });
             tabellaGiocatori.innerHTML = html;
@@ -313,18 +339,16 @@
         }
 
         async function fetchClassifica() {
-            debug('Caricamento classifica squadre...');
             const { data: squadre, error } = await supabaseClient
                 .from('squadre')
                 .select('*')
                 .order('punti', { ascending: false });
 
             if (error) {
-                debug('ERRORE classifica: ' + error.message);
+                console.error('ERRORE classifica:', error);
                 return;
             }
 
-            debug('Squadre caricate: ' + squadre.length);
             let html = '';
             squadre.forEach(s => {
                 html += `<tr>
@@ -337,116 +361,114 @@
             tabellaSquadre.innerHTML = html;
         }
 
-        // ---------- ULTIME PARTITE (Semplificato) ----------
+        // ---------- ULTIME PARTITE con paginazione ----------
         function caricaPartite() {
             supabaseClient
                 .channel('partite-channel')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'partite' }, () => fetchPartite())
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'partite' }, () => {
+                    fetchTuttePartite();
+                })
                 .subscribe();
-            fetchPartite();
+            fetchTuttePartite();
         }
 
-        async function fetchPartite() {
-            debug('=== INIZIO CARICAMENTO PARTITE ===');
-            
+        async function fetchTuttePartite() {
             try {
-                // Prima query: recupera tutte le partite
-                debug('Query 1: recupero partite...');
-                const { data: partite, error: err1 } = await supabaseClient
+                const { data: partite, error } = await supabaseClient
                     .from('partite')
-                    .select('*')
-                    .order('data', { ascending: false })
-                    .limit(20);
+                    .select(`
+                        id,
+                        set_casa,
+                        set_ospite,
+                        data,
+                        squadre!squadra_casa_id (nome),
+                        squadre!squadra_ospite_id (nome),
+                        premi ( giocatore_id )
+                    `)
+                    .order('data', { ascending: false });
 
-                if (err1) {
-                    debug('ERRORE query partite: ' + err1.message);
-                    listaPartiteDiv.innerHTML = '<p style="color: #dc3545;">Errore nel caricamento partite: ' + err1.message + '</p>';
+                if (error) {
+                    console.error('ERRORE partite:', error);
                     return;
                 }
 
-                debug('Partite trovate: ' + (partite?.length || 0));
-                
-                if (!partite || partite.length === 0) {
-                    listaPartiteDiv.innerHTML = '<p style="color: #64748b;">Nessuna partita registrata</p>';
-                    return;
-                }
-
-                // Per ogni partita, recupera i dettagli delle squadre
-                let html = '';
-                for (const p of partite) {
-                    debug(`Elaborazione partita ${p.id}...`);
-                    
-                    // Recupera squadra casa
-                    const { data: casa, error: errCasa } = await supabaseClient
-                        .from('squadre')
-                        .select('nome')
-                        .eq('id', p.squadra_casa_id)
-                        .single();
-                    
-                    if (errCasa) {
-                        debug('ERRORE squadra casa: ' + errCasa.message);
-                        continue;
-                    }
-
-                    // Recupera squadra ospite
-                    const { data: ospite, error: errOspite } = await supabaseClient
-                        .from('squadre')
-                        .select('nome')
-                        .eq('id', p.squadra_ospite_id)
-                        .single();
-                    
-                    if (errOspite) {
-                        debug('ERRORE squadra ospite: ' + errOspite.message);
-                        continue;
-                    }
-
-                    // Recupera MVP (se presente)
-                    const { data: premi, error: errPremi } = await supabaseClient
-                        .from('premi')
-                        .select('giocatore_id')
-                        .eq('partita_id', p.id);
-
-                    let mvpText = '';
-                    if (!errPremi && premi && premi.length > 0) {
+                // Per ogni partita, recupera i dettagli dell'MVP
+                for (let p of partite) {
+                    if (p.premi && p.premi.length > 0) {
                         const { data: giocatore } = await supabaseClient
                             .from('giocatori')
-                            .select('nome, voto')
-                            .eq('id', premi[0].giocatore_id)
+                            .select('nome, voto_totale, partite_giocate')
+                            .eq('id', p.premi[0].giocatore_id)
                             .single();
                         
                         if (giocatore) {
-                            mvpText = `<div class="partita-mvp">⭐ MVP: ${giocatore.nome} <span class="badge">${giocatore.voto}</span></div>`;
+                            p.mvp_nome = giocatore.nome;
+                            p.mvp_media = giocatore.partite_giocate > 0 
+                                ? (giocatore.voto_totale / giocatore.partite_giocate).toFixed(1) 
+                                : 0;
                         }
                     }
+                }
 
-                    const dataFormattata = new Date(p.data).toLocaleDateString('it-IT', { 
+                tutteLePartite = partite || [];
+                paginaCorrente = 0;
+                aggiornaPaginazione();
+                mostraPaginaCorrente();
+
+            } catch (e) {
+                console.error('ECCEZIONE:', e);
+            }
+        }
+
+        function mostraPaginaCorrente() {
+            const inizio = paginaCorrente * partitePerPagina;
+            const fine = inizio + partitePerPagina;
+            const partiteDaMostrare = tutteLePartite.slice(inizio, fine);
+
+            let html = '';
+            if (partiteDaMostrare.length === 0) {
+                html = '<p style="color: #64748b; text-align: center;">Nessuna partita registrata</p>';
+            } else {
+                partiteDaMostrare.forEach(p => {
+                    const data = new Date(p.data).toLocaleDateString('it-IT', { 
                         day: '2-digit', 
                         month: '2-digit',
                         hour: '2-digit',
                         minute: '2-digit'
                     });
 
+                    let mvpText = '';
+                    if (p.mvp_nome) {
+                        mvpText = `<div class="partita-mvp">⭐ MVP: ${p.mvp_nome} <span class="badge">media ${p.mvp_media}</span></div>`;
+                    }
+
                     html += `<div class="partita-item">
-                        <strong>${casa.nome} vs ${ospite.nome}</strong>
+                        <strong>${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome}</strong>
                         <div class="partita-risultato">${p.set_casa} - ${p.set_ospite}</div>
-                        <div class="partita-data">📅 ${dataFormattata}</div>
+                        <div class="partita-data">📅 ${data}</div>
                         ${mvpText}
                     </div>`;
-                }
-
-                debug('HTML generato, lunghezza: ' + html.length);
-                listaPartiteDiv.innerHTML = html;
-
-            } catch (e) {
-                debug('ECCEZIONE: ' + e.toString());
-                listaPartiteDiv.innerHTML = '<p style="color: #dc3545;">Errore imprevisto: ' + e.message + '</p>';
+                });
             }
-            
-            debug('=== FINE CARICAMENTO PARTITE ===');
+
+            listaPartiteDiv.innerHTML = html;
+            aggiornaPaginazione();
         }
 
+        function aggiornaPaginazione() {
+            const totalePagine = Math.ceil(tutteLePartite.length / partitePerPagina);
+            document.getElementById('pageInfo').textContent = `Pagina ${paginaCorrente + 1} di ${totalePagine || 1}`;
+            
+            document.getElementById('prevPage').disabled = paginaCorrente === 0;
+            document.getElementById('nextPage').disabled = paginaCorrente >= totalePagine - 1;
+        }
+
+        window.cambiaPagina = function(direzione) {
+            paginaCorrente += direzione;
+            mostraPaginaCorrente();
+        };
+
         // Avvia tutto
-        debug('Inizializzazione...');
         caricaGiocatori();
         caricaClassifica();
         caricaPartite();
