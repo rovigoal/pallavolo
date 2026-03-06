@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h2>Test Nuovo Progetto</h2>
+    <button onclick="test()">Test Connessione</button>
+    <div id="log" style="margin-top:20px; padding:10px; background:#f0f0f0;"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://ojzdxhukqhnrobpxxvlh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qemR4aHVrcWhucm9icHh4dmxoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Nzc5NDIsImV4cCI6MjA4ODM1Mzk0Mn0.N47R33pZ54dyoLyLqZfjfBkXyRYgWal0y-NwJKjM0XI';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const log = document.getElementById('log');
+
+        async function test() {
+            log.innerHTML = '🟢 Test connessione...';
+            
+            try {
+                // Prova a leggere
+                const { data, error } = await supabase.from('squadre').select('*');
+                
+                if (error) {
+                    log.innerHTML = '❌ Errore lettura: ' + error.message;
+                } else {
+                    log.innerHTML = '✅ Lettura OK! Dati: ' + JSON.stringify(data);
+                    
+                    // Prova a inserire
+                    const { error: insertError } = await supabase
+                        .from('squadre')
+                        .insert({ nome: 'Squadra Test', punti: 0, partite_giocate: 0, vinte: 0, perse: 0 });
+                    
+                    if (insertError) {
+                        log.innerHTML += '<br>❌ Errore inserimento: ' + insertError.message;
+                    } else {
+                        log.innerHTML += '<br>✅ Inserimento OK!';
+                    }
+                }
+            } catch(e) {
+                log.innerHTML = '❌ Eccezione: ' + e.toString();
+            }
+        }
+    </script>
+</body>
+</html>
