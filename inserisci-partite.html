@@ -94,15 +94,6 @@
         }
         .partita-info { flex: 1; }
         .partita-azioni { display: flex; gap: 0.5rem; }
-        .badge {
-            background: #f97316;
-            color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-left: 0.5rem;
-        }
         .alert-success {
             background: #d1fae5;
             color: #065f46;
@@ -124,7 +115,7 @@
 </head>
 <body>
     <header>
-        <h1>⚡ Rovigol Pallavolo – Gestione Partite (punteggio set)</h1>
+        <h1>⚡ Rovigol Pallavolo – Gestione Partite</h1>
         <nav>
             <a href="main.html">← Home</a>
             <a href="admin.html">Admin</a>
@@ -220,76 +211,65 @@
             if (setOspite === 3 && setCasa === 0) return { casa: 0, ospite: 3 };
             if (setOspite === 3 && setCasa === 1) return { casa: 0, ospite: 3 };
             if (setOspite === 3 && setCasa === 2) return { casa: 1, ospite: 2 };
-            // casi non validi (es. 3-3 non esiste) restituiscono 0-0
+            // casi non validi (es. 3-3) restituiscono 0-0
             return { casa: 0, ospite: 0 };
         }
 
-        // -------------------- APPLICA/RIMUOVI STATISTICHE --------------------
+        // -------------------- APPLICA/RIMUOVI STATISTICHE (SENZA RPC) --------------------
         async function applicaStatistiche(partita, segno = 1) {
-            // segno: +1 per aggiungere, -1 per rimuovere
             const { squadra_casa_id, squadra_ospite_id, set_casa, set_ospite, mvp_id, voto } = partita;
             const punti = calcolaPunti(set_casa, set_ospite);
             
             // Aggiorna squadra casa
-            if (punti.casa !== 0) {
-                await aggiornaSquadra(squadra_casa_id, {
-                    punti: segno * punti.casa,
-                    vinte: segno * (punti.casa > punti.ospite ? 1 : 0),
-                    perse: segno * (punti.casa < punti.ospite ? 1 : 0),
-                    partite: segno * 1
-                });
+            const { data: casa } = await supabaseClient
+                .from('squadre')
+                .select('punti, vinte, perse, partite_giocate')
+                .eq('id', squadra_casa_id)
+                .single();
+            if (casa) {
+                await supabaseClient
+                    .from('squadre')
+                    .update({
+                        punti: casa.punti + segno * punti.casa,
+                        vinte: casa.vinte + segno * (punti.casa > punti.ospite ? 1 : 0),
+                        perse: casa.perse + segno * (punti.casa < punti.ospite ? 1 : 0),
+                        partite_giocate: casa.partite_giocate + segno * 1
+                    })
+                    .eq('id', squadra_casa_id);
             }
+
             // Aggiorna squadra ospite
-            if (punti.ospite !== 0) {
-                await aggiornaSquadra(squadra_ospite_id, {
-                    punti: segno * punti.ospite,
-                    vinte: segno * (punti.ospite > punti.casa ? 1 : 0),
-                    perse: segno * (punti.ospite < punti.casa ? 1 : 0),
-                    partite: segno * 1
-                });
+            const { data: ospite } = await supabaseClient
+                .from('squadre')
+                .select('punti, vinte, perse, partite_giocate')
+                .eq('id', squadra_ospite_id)
+                .single();
+            if (ospite) {
+                await supabaseClient
+                    .from('squadre')
+                    .update({
+                        punti: ospite.punti + segno * punti.ospite,
+                        vinte: ospite.vinte + segno * (punti.ospite > punti.casa ? 1 : 0),
+                        perse: ospite.perse + segno * (punti.ospite < punti.casa ? 1 : 0),
+                        partite_giocate: ospite.partite_giocate + segno * 1
+                    })
+                    .eq('id', squadra_ospite_id);
             }
 
-            // Aggiorna giocatore MVP se presente e con voto
+            // Aggiorna giocatore MVP
             if (mvp_id && voto) {
-                await aggiornaGiocatore(mvp_id, segno * voto);
-            }
-        }
-
-        async function aggiornaSquadra(id, { punti, vinte, perse, partite }) {
-            const { error } = await supabaseClient.rpc('aggiorna_squadra', {
-                squadra_id: id,
-                delta_punti: punti,
-                delta_vinte: vinte,
-                delta_perse: perse,
-                delta_partite: partite
-            });
-            if (error) {
-                // Fallback: update diretto (non atomico, ma meglio di niente)
-                console.warn('RPC aggiorna_squadra fallita, uso fallback', error);
-                const { data: squadra } = await supabaseClient.from('squadre').select('punti, vinte, perse, partite_giocate').eq('id', id).single();
-                if (squadra) {
-                    await supabaseClient.from('squadre').update({
-                        punti: squadra.punti + punti,
-                        vinte: squadra.vinte + vinte,
-                        perse: squadra.perse + perse,
-                        partite_giocate: squadra.partite_giocate + partite
-                    }).eq('id', id);
-                }
-            }
-        }
-
-        async function aggiornaGiocatore(id, deltaPunti) {
-            const { error } = await supabaseClient.rpc('aggiorna_giocatore', {
-                giocatore_id: id,
-                delta_punti: deltaPunti
-            });
-            if (error) {
-                console.warn('RPC aggiorna_giocatore fallita, uso fallback', error);
-                const { data: giocatore } = await supabaseClient.from('giocatori').select('punteggio_totale').eq('id', id).single();
-                if (giocatore) {
-                    await supabaseClient.from('giocatori').update({
-                        punteggio_totale: giocatore.punteggio_totale + deltaPunti
-                    }).eq('id', id);
+                const { data: gioc } = await supabaseClient
+                    .from('giocatori')
+                    .select('punteggio_totale')
+                    .eq('id', mvp_id)
+                    .single();
+                if (gioc) {
+                    await supabaseClient
+                        .from('giocatori')
+                        .update({
+                            punteggio_totale: gioc.punteggio_totale + segno * voto
+                        })
+                        .eq('id', mvp_id);
                 }
             }
         }
@@ -323,7 +303,7 @@
                 squadra_ospite_id: squadraOspite,
                 set_casa: setCasa,
                 set_ospite: setOspite
-                // created_at verrà impostato automaticamente dal DB
+                // createdata automatico dal DB
             };
 
             try {
@@ -396,7 +376,7 @@
 
                 resetForm();
                 await caricaPartite();
-                await caricaSquadre();   // per refresh select (i punti cambiano, ma non serve ai fini delle select)
+                await caricaSquadre();   // per refresh (non serve per le select, ma per eventuali altri scopi)
                 await caricaGiocatori();  // per refresh voti totali
                 aggiornaSelectMVP();
             } catch (error) {
