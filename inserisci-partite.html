@@ -240,18 +240,23 @@
                 await aggiornaStatistiche(casaId, puntiCasa, setCasa > setOspite);
                 await aggiornaStatistiche(ospiteId, puntiOspite, setOspite > setCasa);
 
+                // Recupera i nomi per il messaggio
+                const squadraCasaNome = squadre.find(s => s.id === casaId)?.nome || '';
+                const squadraOspiteNome = squadre.find(s => s.id === ospiteId)?.nome || '';
+                const giocatoreNome = giocatori.find(g => g.id === migliorId)?.nome || '';
+
                 // Pulisci form
                 document.getElementById('setCasa').value = '';
                 document.getElementById('setOspite').value = '';
                 document.getElementById('punteggioMigliore').value = '';
                 document.getElementById('migliorGiocatore').innerHTML = '<option value="">Miglior giocatore</option>';
 
-                // Ricarica dati
-                await caricaGiocatori();
+                // Ricarica dati e mostra messaggio dettagliato
+                await caricaGiocatori(); // per aggiornare i punteggi nella lista del select
                 await aggiornaListaPartite();
                 aggiornaMigliorGiocatore(); // per aggiornare eventualmente la lista nel select
 
-                mostraMessaggio('✅ Partita registrata!');
+                mostraMessaggio(`✅ Partita registrata: ${squadraCasaNome} ${setCasa}-${setOspite} ${squadraOspiteNome} - MVP: ${giocatoreNome} (${punteggioMigliore} punti)`);
             } catch (error) {
                 console.error(error);
                 mostraMessaggio('❌ Errore: ' + error.message, 'error');
