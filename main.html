@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Rovigol Pallavolo - Home</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Rovigol Pallavolo</h1>
+        <nav>
+            <a href="main.html">Home</a>
+            <a href="admin.html">Admin</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- Riquadro Classifica -->
+        <section class="riquadro" id="classifica">
+            <h2>Classifica</h2>
+            <table id="tabellaClassifica">
+                <thead>
+                    <tr>
+                        <th>Squadra</th>
+                        <th>Punti</th>
+                        <th>Giocate</th>
+                        <th>Vinte</th>
+                        <th>Perse</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- Riquadro Ultime Partite -->
+        <section class="riquadro" id="ultime-partite">
+            <h2>Ultime partite</h2>
+            <div id="listaPartite"></div>
+        </section>
+    </main>
+
+    <script>
+        // Riferimenti agli elementi
+        const classificaBody = document.querySelector('#tabellaClassifica tbody');
+        const listaPartiteDiv = document.getElementById('listaPartite');
+
+        // Funzione per caricare la classifica in tempo reale
+        function caricaClassifica() {
+            supabase
+                .channel('squadre-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'squadre' }, payload => {
+                    fetchClassifica();
+                })
+                .subscribe();
+
+            fetchClassifica();
+        }
+
+        async function fetchClassifica() {
+            const { data: squadre, error } = await supabase
+                .from('squadre')
+                .select('*')
+                .order('punti', { ascending: false });
+
+            if (error) console.error(error);
+            else {
+                let html = '';
+                squadre.forEach(s => {
+                    html += `<tr>
+                        <td>${s.nome}</td>
+                        <td>${s.punti}</td>
+                        <td>${s.partite_giocate}</td>
+                        <td>${s.vinte}</td>
+                        <td>${s.perse}</td>
+                    </tr>`;
+                });
+                classificaBody.innerHTML = html;
+            }
+        }
+
+        // Funzione per caricare le ultime partite in tempo reale
+        function caricaPartite() {
+            supabase
+                .channel('partite-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'partite' }, payload => {
+                    fetchPartite();
+                })
+                .subscribe();
+
+            fetchPartite();
+        }
+
+        async function fetchPartite() {
+            const { data: partite, error } = await supabase
+                .from('partite')
+                .select(`
+                    id,
+                    set_casa,
+                    set_ospite,
+                    data,
+                    squadra_casa_id,
+                    squadra_ospite_id,
+                    squadre!squadra_casa_id (nome),
+                    squadre!squadra_ospite_id (nome)
+                `)
+                .order('data', { ascending: false })
+                .limit(5);
+
+            if (error) console.error(error);
+            else {
+                let html = '';
+                partite.forEach(p => {
+                    const data = new Date(p.data).toLocaleDateString('it-IT');
+                    html += `<div class="partita">
+                        <strong>${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome}</strong><br>
+                        ${p.set_casa} - ${p.set_ospite} (${data})
+                    </div>`;
+                });
+                listaPartiteDiv.innerHTML = html;
+            }
+        }
+
+        // Avvia tutto
+        caricaClassifica();
+        caricaPartite();
+    </script>
+</body>
+</html>
