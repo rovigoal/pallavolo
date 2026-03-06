@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volley - Menu Principale</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Segoe UI', sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; background:linear-gradient(145deg,#0b2b40 0%,#1e4b5e 100%); position:relative; overflow:hidden; }
+        .volley-bg { position:absolute; width:100%; height:100%; top:0; left:0; z-index:0; }
+        .ball { position:absolute; width:80px; height:80px; background:#f9c74f; border-radius:50%; opacity:0.2; animation:float 15s infinite ease-in-out; }
+        .ball::after { content:""; position:absolute; top:50%; left:50%; width:100%; height:100%; background:radial-gradient(circle at 30% 30%, white, #f1b24a 70%); border-radius:50%; transform:translate(-50%,-50%); }
+        .ball::before { content:""; position:absolute; top:0; left:50%; width:4px; height:100%; background:#333; transform:translateX(-50%) rotate(30deg); border-radius:2px; }
+        .ball:nth-child(1) { top:10%; left:5%; width:120px; height:120px; animation-delay:0s; }
+        .ball:nth-child(2) { bottom:15%; right:8%; width:180px; height:180px; animation-delay:2s; }
+        .ball:nth-child(3) { top:40%; right:20%; width:90px; height:90px; animation-delay:4s; }
+        .ball:nth-child(4) { bottom:30%; left:15%; width:150px; height:150px; animation-delay:1s; }
+        .ball:nth-child(5) { top:70%; left:40%; width:100px; height:100px; animation-delay:3s; }
+        @keyframes float { 0% { transform:translateY(0px) rotate(0deg); } 50% { transform:translateY(-30px) rotate(180deg); } 100% { transform:translateY(0px) rotate(360deg); } }
+        .menu-container { position:relative; z-index:10; text-align:center; color:white; backdrop-filter:blur(8px); background:rgba(255,255,255,0.1); padding:50px 70px; border-radius:40px; border:1px solid rgba(255,255,255,0.2); box-shadow:0 20px 40px rgba(0,0,0,0.3); }
+        h2 { font-size:2.5rem; margin-bottom:40px; text-transform:uppercase; letter-spacing:3px; text-shadow:3px 3px 0 rgba(0,0,0,0.2); background:linear-gradient(135deg,#fff 0%,#ffe5b4 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .button-grid { display:flex; gap:30px; flex-wrap:wrap; justify-content:center; }
+        .menu-btn { background:#f9c74f; border:none; padding:20px 40px; font-size:1.8rem; font-weight:bold; color:#0b2b40; border-radius:60px; cursor:pointer; transition:all 0.3s ease; box-shadow:0 8px 0 #b87c2c,0 10px 20px rgba(0,0,0,0.3); text-transform:uppercase; letter-spacing:2px; min-width:250px; }
+        .menu-btn:hover { transform:translateY(-3px); box-shadow:0 11px 0 #b87c2c,0 15px 25px rgba(0,0,0,0.3); background:#ffe08c; }
+        .menu-btn:active { transform:translateY(5px); box-shadow:0 3px 0 #b87c2c,0 8px 15px rgba(0,0,0,0.3); }
+        .admin-btn { background:#e63946; box-shadow:0 8px 0 #a12733; color:white; }
+        .admin-btn:hover { background:#ff5a6e; box-shadow:0 11px 0 #a12733; }
+        .court-lines { position:absolute; bottom:0; left:0; width:100%; height:150px; background:repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(255,255,255,0.1) 40px,rgba(255,255,255,0.1) 80px); z-index:5; pointer-events:none; }
+        .court-lines::before { content:""; position:absolute; top:-40px; left:50%; width:4px; height:100px; background:white; transform:translateX(-50%); opacity:0.3; }
+        .back-btn { margin-top:30px; background:transparent; border:2px solid rgba(255,255,255,0.3); padding:10px 30px; font-size:1rem; color:white; border-radius:40px; cursor:pointer; transition:0.3s; }
+        .back-btn:hover { background:rgba(255,255,255,0.1); border-color:white; }
+    </style>
+</head>
+<body>
+    <div class="volley-bg">
+        <div class="ball"></div><div class="ball"></div><div class="ball"></div><div class="ball"></div><div class="ball"></div>
+    </div>
+    <div class="court-lines"></div>
+    <div class="menu-container">
+        <h2>⚡ AREA PRINCIPALE ⚡</h2>
+        <div class="button-grid">
+            <button class="menu-btn" onclick="window.location.href='classifica_squadre.html'">🏐 CLASSIFICA SQUADRE</button>
+            <button class="menu-btn" onclick="window.location.href='classifica_giocatori.html'">🌟 CLASSIFICA GIOCATORI</button>
+            <button class="menu-btn admin-btn" onclick="window.location.href='admin_login.html'">🔧 ADMIN</button>
+        </div>
+        <button class="back-btn" onclick="window.location.href='index.html'">← Torna alla home</button>
+    </div>
+</body>
+</html>
