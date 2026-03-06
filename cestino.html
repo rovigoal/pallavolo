@@ -2,34 +2,195 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Admin - Cestino</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Segoe UI', sans-serif; min-height:100vh; background:linear-gradient(145deg,#0b2b40 0%,#1e4b5e 100%); padding:20px; position:relative; }
-        .volley-bg { position:fixed; width:100%; height:100%; top:0; left:0; z-index:0; }
-        .ball { position:absolute; width:80px; height:80px; background:#f9c74f; border-radius:50%; opacity:0.2; animation:float 15s infinite ease-in-out; }
-        .ball::after { content:""; position:absolute; top:50%; left:50%; width:100%; height:100%; background:radial-gradient(circle at 30% 30%, white, #f1b24a 70%); border-radius:50%; transform:translate(-50%,-50%); }
-        .ball::before { content:""; position:absolute; top:0; left:50%; width:4px; height:100%; background:#333; transform:translateX(-50%) rotate(30deg); border-radius:2px; }
+        body {
+            font-family:'Segoe UI', sans-serif;
+            min-height:100vh;
+            background:linear-gradient(145deg,#0b2b40 0%,#1e4b5e 100%);
+            padding:20px;
+            position:relative;
+        }
+        .volley-bg {
+            position:fixed;
+            width:100%;
+            height:100%;
+            top:0;
+            left:0;
+            z-index:0;
+        }
+        .ball {
+            position:absolute;
+            width:80px;
+            height:80px;
+            background:#f9c74f;
+            border-radius:50%;
+            opacity:0.2;
+            animation:float 15s infinite ease-in-out;
+        }
+        .ball::after {
+            content:"";
+            position:absolute;
+            top:50%;
+            left:50%;
+            width:100%;
+            height:100%;
+            background:radial-gradient(circle at 30% 30%, white, #f1b24a 70%);
+            border-radius:50%;
+            transform:translate(-50%,-50%);
+        }
+        .ball::before {
+            content:"";
+            position:absolute;
+            top:0;
+            left:50%;
+            width:4px;
+            height:100%;
+            background:#333;
+            transform:translateX(-50%) rotate(30deg);
+            border-radius:2px;
+        }
         .ball:nth-child(1) { top:10%; left:5%; width:120px; height:120px; animation-delay:0s; }
         .ball:nth-child(2) { bottom:15%; right:8%; width:180px; height:180px; animation-delay:2s; }
         .ball:nth-child(3) { top:40%; right:20%; width:90px; height:90px; animation-delay:4s; }
         .ball:nth-child(4) { bottom:30%; left:15%; width:150px; height:150px; animation-delay:1s; }
         .ball:nth-child(5) { top:70%; left:40%; width:100px; height:100px; animation-delay:3s; }
-        @keyframes float { 0% { transform:translateY(0px) rotate(0deg); } 50% { transform:translateY(-30px) rotate(180deg); } 100% { transform:translateY(0px) rotate(360deg); } }
-        .container { position:relative; z-index:10; backdrop-filter:blur(8px); background:rgba(255,255,255,0.1); border-radius:40px; padding:40px 50px; border:1px solid rgba(255,255,255,0.2); box-shadow:0 20px 40px rgba(0,0,0,0.3); color:white; max-width:1200px; margin:0 auto; }
-        h1 { text-align:center; font-size:2.5rem; margin-bottom:40px; background:linear-gradient(135deg,#fff,#ffe5b4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        h2 { color:#f9c74f; margin:30px 0 15px; font-size:2rem; border-bottom:2px solid rgba(249,199,79,0.3); padding-bottom:5px; }
-        .table-wrapper { overflow-x:auto; background:rgba(0,0,0,0.2); border-radius:30px; padding:20px; margin-bottom:30px; }
-        table { width:100%; border-collapse:collapse; color:white; }
-        th { background:rgba(249,199,79,0.3); padding:12px; font-weight:600; text-transform:uppercase; }
-        td { padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); text-align:center; }
-        .btn-small { background:#e63946; border:none; padding:6px 15px; font-size:0.9rem; font-weight:bold; color:white; border-radius:40px; cursor:pointer; box-shadow:0 3px 0 #a12733; transition:0.2s; }
-        .btn-small:hover { transform:translateY(-2px); box-shadow:0 5px 0 #a12733; background:#ff5a6e; }
-        .btn-small:active { transform:translateY(3px); box-shadow:0 1px 0 #a12733; }
-        .back-link { display:block; text-align:center; margin-top:30px; color:rgba(255,255,255,0.7); text-decoration:none; font-size:1.1rem; }
-        .back-link:hover { color:white; text-decoration:underline; }
-        .message { margin-top:20px; padding:10px; border-radius:30px; text-align:center; font-weight:bold; background:rgba(0,0,0,0.3); }
+        @keyframes float {
+            0% { transform:translateY(0px) rotate(0deg); }
+            50% { transform:translateY(-30px) rotate(180deg); }
+            100% { transform:translateY(0px) rotate(360deg); }
+        }
+        .container {
+            position:relative;
+            z-index:10;
+            backdrop-filter:blur(8px);
+            background:rgba(255,255,255,0.1);
+            border-radius:40px;
+            padding:40px 50px;
+            border:1px solid rgba(255,255,255,0.2);
+            box-shadow:0 20px 40px rgba(0,0,0,0.3);
+            color:white;
+            max-width:1200px;
+            margin:0 auto;
+        }
+        h1 {
+            text-align:center;
+            font-size:2.5rem;
+            margin-bottom:40px;
+            background:linear-gradient(135deg,#fff,#ffe5b4);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+        }
+        h2 {
+            color:#f9c74f;
+            margin:30px 0 15px;
+            font-size:2rem;
+            border-bottom:2px solid rgba(249,199,79,0.3);
+            padding-bottom:5px;
+        }
+        .table-wrapper {
+            overflow-x:auto;
+            background:rgba(0,0,0,0.2);
+            border-radius:30px;
+            padding:20px;
+            margin-bottom:30px;
+        }
+        table {
+            width:100%;
+            border-collapse:collapse;
+            color:white;
+        }
+        th {
+            background:rgba(249,199,79,0.3);
+            padding:12px;
+            font-weight:600;
+            text-transform:uppercase;
+        }
+        td {
+            padding:10px;
+            border-bottom:1px solid rgba(255,255,255,0.1);
+            text-align:center;
+        }
+        .btn-small {
+            background:#e63946;
+            border:none;
+            padding:6px 15px;
+            font-size:0.9rem;
+            font-weight:bold;
+            color:white;
+            border-radius:40px;
+            cursor:pointer;
+            box-shadow:0 3px 0 #a12733;
+            transition:0.2s;
+        }
+        .btn-small:hover {
+            transform:translateY(-2px);
+            box-shadow:0 5px 0 #a12733;
+            background:#ff5a6e;
+        }
+        .btn-small:active {
+            transform:translateY(3px);
+            box-shadow:0 1px 0 #a12733;
+        }
+        .back-link {
+            display:block;
+            text-align:center;
+            margin-top:30px;
+            color:rgba(255,255,255,0.7);
+            text-decoration:none;
+            font-size:1.1rem;
+        }
+        .back-link:hover {
+            color:white;
+            text-decoration:underline;
+        }
+        .message {
+            margin-top:20px;
+            padding:10px;
+            border-radius:30px;
+            text-align:center;
+            font-weight:bold;
+            background:rgba(0,0,0,0.3);
+        }
+        /* Responsive */
+        @media screen and (max-width:768px) {
+            body {
+                padding:10px;
+            }
+            .container {
+                padding:20px 15px !important;
+                width:100% !important;
+                max-width:100% !important;
+                margin:10px auto !important;
+            }
+            h1 {
+                font-size:2rem !important;
+                margin-bottom:20px;
+            }
+            h2 {
+                font-size:1.5rem;
+                margin:20px 0 10px;
+            }
+            .table-wrapper {
+                padding:10px;
+            }
+            table {
+                min-width:600px; /* scroll orizzontale */
+            }
+            th, td {
+                padding:8px 5px;
+                font-size:0.9rem;
+            }
+            .btn-small {
+                padding:5px 10px;
+                font-size:0.8rem;
+            }
+            .ball {
+                opacity:0.1;
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -41,7 +202,6 @@
         <h1>🗑️ CESTINO</h1>
         <p style="text-align:center; margin-bottom:20px;">Qui puoi eliminare definitivamente squadre, giocatori o partite.</p>
 
-        <!-- Squadre -->
         <h2>🏐 Squadre</h2>
         <div class="table-wrapper">
             <table>
@@ -50,7 +210,6 @@
             </table>
         </div>
 
-        <!-- Giocatori -->
         <h2>🌟 Giocatori</h2>
         <div class="table-wrapper">
             <table>
@@ -59,7 +218,6 @@
             </table>
         </div>
 
-        <!-- Partite -->
         <h2>📋 Partite</h2>
         <div class="table-wrapper">
             <table>
@@ -105,15 +263,9 @@
         async function loadGiocatori() {
             const { data, error } = await supabaseClient
                 .from('giocatori')
-                .select('*, squadra_id')
+                .select('*, squadre(nome)')
                 .order('id');
             if (error) return console.error(error);
-            // mappa squadre
-            const { data: squadre, error: errS } = await supabaseClient.from('squadre').select('id, nome');
-            if (errS) return console.error(errS);
-            const squadreMap = {};
-            squadre.forEach(s => squadreMap[s.id] = s.nome);
-
             const tbody = document.getElementById('tabellaGiocatori');
             tbody.innerHTML = '';
             data.forEach(g => {
@@ -122,7 +274,7 @@
                     <td>${g.id}</td>
                     <td>${g.nome}</td>
                     <td>${g.cognome}</td>
-                    <td>${squadreMap[g.squadra_id] || '—'}</td>
+                    <td>${g.squadre?.nome || '—'}</td>
                     <td><button class="btn-small" onclick="eliminaGiocatore(${g.id})">Elimina</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -130,22 +282,23 @@
         }
 
         async function loadPartite() {
-            const { data: partite, error } = await supabaseClient.from('partite').select('*').order('id');
+            const { data, error } = await supabaseClient
+                .from('partite')
+                .select(`
+                    id, set_casa, set_ospite, data,
+                    squadre_casa!squadra_casa_id (nome),
+                    squadre_ospite!squadra_ospite_id (nome)
+                `)
+                .order('id');
             if (error) return console.error(error);
-            // mappa squadre
-            const { data: squadre, error: errS } = await supabaseClient.from('squadre').select('id, nome');
-            if (errS) return console.error(errS);
-            const squadreMap = {};
-            squadre.forEach(s => squadreMap[s.id] = s.nome);
-
             const tbody = document.getElementById('tabellaPartite');
             tbody.innerHTML = '';
-            partite.forEach(p => {
+            data.forEach(p => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${p.id}</td>
-                    <td>${squadreMap[p.squadra_casa_id] || '?'}</td>
-                    <td>${squadreMap[p.squadra_ospite_id] || '?'}</td>
+                    <td>${p.squadre_casa.nome}</td>
+                    <td>${p.squadre_ospite.nome}</td>
                     <td>${p.set_casa} - ${p.set_ospite}</td>
                     <td>${p.data}</td>
                     <td><button class="btn-small" onclick="eliminaPartita(${p.id})">Elimina</button></td>
@@ -168,15 +321,13 @@
         };
 
         window.eliminaGiocatore = async function(id) {
-            if (!confirm('Eliminare questo giocatore? Le partite in cui è miglior giocatore avranno il campo azzerato.')) return;
+            if (!confirm('Eliminare questo giocatore? Non verranno cancellate le partite in cui è stato miglior giocatore (il campo verrà reso nullo).')) return;
             const { error } = await supabaseClient.from('giocatori').delete().eq('id', id);
             if (error) {
                 showMessage('Errore: ' + error.message, false);
             } else {
                 showMessage('Giocatore eliminato.', true);
                 loadGiocatori();
-                // Ricarica partite per eventuali aggiornamenti (il nome del giocatore sparisce)
-                loadPartite();
             }
         };
 
