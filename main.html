@@ -2,107 +2,201 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rovigol Pallavolo - Home</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <style>
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            max-width: 1400px;
-            margin: 10px auto;  /* Ridotto da 20px a 10px per alzare i box */
-            padding: 0 20px;
-            width: 100%;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
-        
-        .top-row {
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, #f6f9fc 0%, #e6f0f5 100%);
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        header {
+            background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.3);
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        nav {
+            margin-top: 0.8rem;
+        }
+
+        nav a {
+            color: white;
+            margin-right: 2rem;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.4rem 0;
+            border-bottom: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        nav a:hover {
+            border-bottom-color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;  /* Leggermente ridotto */
+            grid-template-columns: 1fr 1.8fr 1fr;
+            gap: 1.8rem;
+            align-items: start;
         }
-        
-        .bottom-row {
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;  /* Ridotto */
+
+        .card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(249, 115, 22, 0.1) inset;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        
-        .riquadro {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            height: fit-content;
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 25px 40px -12px rgba(249, 115, 22, 0.25);
         }
-        
-        .riquadro h2 {
+
+        .card h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
             color: #f97316;
-            margin-top: 0;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
             border-bottom: 2px solid #f97316;
-            padding-bottom: 10px;
-            font-size: 1.3rem;
+            padding-bottom: 0.75rem;
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
-        
-        th, td {
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        
+
         th {
-            background-color: #f97316;
-            color: white;
-            font-size: 0.9rem;
+            text-align: left;
+            padding: 0.75rem 0.5rem;
+            font-weight: 600;
+            color: #64748b;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        
-        .partita {
-            padding: 10px;
-            margin: 10px 0;
-            background: #f8f9fa;
+
+        td {
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .squadra-nome {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .punti {
+            font-weight: 700;
+            color: #f97316;
+        }
+
+        .voto-alto {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .voto-medio {
+            color: #f97316;
+            font-weight: 600;
+        }
+
+        .partita-item {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
             border-left: 4px solid #f97316;
-            border-radius: 5px;
+            transition: 0.2s;
+        }
+
+        .partita-item:hover {
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .partita-item strong {
+            font-size: 1rem;
+            color: #0f172a;
+        }
+
+        .partita-risultato {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #f97316;
+            margin: 0.3rem 0;
+        }
+
+        .partita-data {
+            color: #64748b;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .partita-mvp {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed #cbd5e1;
             font-size: 0.9rem;
+            color: #475569;
         }
-        
-        .partita small {
-            display: block;
-            color: #666;
-            margin-top: 5px;
+
+        .badge {
+            background: #f97316;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
         }
-        
-        #classifica-squadre {
-            width: 600px;
-            max-width: 90%;
-        }
-        
-        @media (max-width: 900px) {
-            .top-row {
+
+        @media (max-width: 1000px) {
+            .container {
                 grid-template-columns: 1fr;
-            }
-            #classifica-squadre {
-                width: 100%;
+                gap: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Rovigol Pallavolo</h1>
+        <h1>⚡ Rovigol Pallavolo</h1>
         <nav>
             <a href="main.html">Home</a>
             <a href="admin.html">Admin</a>
@@ -110,46 +204,41 @@
     </header>
 
     <div class="container">
-        <!-- Riga superiore: due colonne -->
-        <div class="top-row">
-            <!-- SINISTRA: Classifica Giocatori -->
-            <section class="riquadro" id="classifica-giocatori">
-                <h2>🏆 Classifica Giocatori</h2>
-                <table id="tabellaGiocatori">
-                    <thead>
-                        <tr>
-                            <th>Giocatore</th>
-                            <th>Squadra</th>
-                            <th>Voto</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </section>
-
-            <!-- DESTRA: Ultime Partite -->
-            <section class="riquadro" id="ultime-partite">
-                <h2>⚡ Ultime Partite</h2>
-                <div id="listaPartite"></div>
-            </section>
+        <!-- COLONNA SINISTRA: Classifica Giocatori -->
+        <div class="card">
+            <h2>🏆 Classifica Giocatori</h2>
+            <table id="tabellaGiocatori">
+                <thead>
+                    <tr>
+                        <th>Giocatore</th>
+                        <th>Squadra</th>
+                        <th>Voto</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
 
-        <!-- Riga inferiore: Classifica Squadre centrata -->
-        <div class="bottom-row">
-            <section class="riquadro" id="classifica-squadre">
-                <h2>📊 Classifica Squadre</h2>
-                <table id="tabellaClassifica">
-                    <thead>
-                        <tr>
-                            <th>Squadra</th>
-                            <th>Punti</th>
-                            <th>V</th>
-                            <th>P</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </section>
+        <!-- COLONNA CENTRALE: Classifica Squadre -->
+        <div class="card">
+            <h2>📊 Classifica Squadre</h2>
+            <table id="tabellaClassifica">
+                <thead>
+                    <tr>
+                        <th>Squadra</th>
+                        <th>Punti</th>
+                        <th>V</th>
+                        <th>P</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- COLONNA DESTRA: Ultime Partite -->
+        <div class="card">
+            <h2>⚡ Ultime Partite</h2>
+            <div id="listaPartite"></div>
         </div>
     </div>
 
@@ -158,7 +247,7 @@
         const tabellaSquadre = document.querySelector('#tabellaClassifica tbody');
         const listaPartiteDiv = document.getElementById('listaPartite');
 
-        // Carica classifica giocatori
+        // ---------- CLASSIFICA GIOCATORI ----------
         function caricaGiocatori() {
             supabaseClient
                 .channel('giocatori-channel')
@@ -174,21 +263,24 @@
                 .order('voto', { ascending: false })
                 .limit(20);
 
-            if (error) console.error(error);
-            else {
-                let html = '';
-                giocatori.forEach(g => {
-                    html += `<tr>
-                        <td><strong>${g.nome}</strong></td>
-                        <td>${g.squadre.nome}</td>
-                        <td style="font-weight: bold; color: ${g.voto > 80 ? '#28a745' : '#f97316'}">${g.voto || 0}</td>
-                    </tr>`;
-                });
-                tabellaGiocatori.innerHTML = html;
+            if (error) {
+                console.error('Errore fetch giocatori:', error);
+                return;
             }
+
+            let html = '';
+            giocatori.forEach(g => {
+                const classeVoto = g.voto > 80 ? 'voto-alto' : 'voto-medio';
+                html += `<tr>
+                    <td class="squadra-nome">${g.nome}</td>
+                    <td>${g.squadre.nome}</td>
+                    <td class="${classeVoto}">${g.voto ?? 0}</td>
+                </tr>`;
+            });
+            tabellaGiocatori.innerHTML = html;
         }
 
-        // Carica classifica squadre
+        // ---------- CLASSIFICA SQUADRE ----------
         function caricaClassifica() {
             supabaseClient
                 .channel('squadre-channel')
@@ -203,22 +295,24 @@
                 .select('*')
                 .order('punti', { ascending: false });
 
-            if (error) console.error(error);
-            else {
-                let html = '';
-                squadre.forEach(s => {
-                    html += `<tr>
-                        <td><strong>${s.nome}</strong></td>
-                        <td style="font-weight: bold; color: #f97316">${s.punti}</td>
-                        <td>${s.vinte}</td>
-                        <td>${s.perse}</td>
-                    </tr>`;
-                });
-                tabellaSquadre.innerHTML = html;
+            if (error) {
+                console.error('Errore fetch classifica:', error);
+                return;
             }
+
+            let html = '';
+            squadre.forEach(s => {
+                html += `<tr>
+                    <td class="squadra-nome">${s.nome}</td>
+                    <td class="punti">${s.punti}</td>
+                    <td>${s.vinte}</td>
+                    <td>${s.perse}</td>
+                </tr>`;
+            });
+            tabellaSquadre.innerHTML = html;
         }
 
-        // Carica ultime partite
+        // ---------- ULTIME PARTITE (con MVP integrato) ----------
         function caricaPartite() {
             supabaseClient
                 .channel('partite-channel')
@@ -228,44 +322,56 @@
         }
 
         async function fetchPartite() {
-            const { data: partite, error } = await supabaseClient
-                .from('partite')
-                .select(`
-                    id,
-                    set_casa,
-                    set_ospite,
-                    data,
-                    squadre!squadra_casa_id (nome),
-                    squadre!squadra_ospite_id (nome)
-                `)
-                .order('data', { ascending: false })
-                .limit(10);
+            try {
+                const { data: partite, error } = await supabaseClient
+                    .from('partite')
+                    .select(`
+                        id,
+                        set_casa,
+                        set_ospite,
+                        data,
+                        squadre!squadra_casa_id (nome),
+                        squadre!squadra_ospite_id (nome),
+                        premi ( giocatori ( nome, voto ) )
+                    `)
+                    .order('data', { ascending: false })
+                    .limit(10);
 
-            if (error) console.error(error);
-            else {
-                let html = '';
-                // Per ogni partita, cerchiamo il premio (miglior giocatore)
-                for (const p of partite) {
-                    const data = new Date(p.data).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
-                    
-                    const { data: premi } = await supabaseClient
-                        .from('premi')
-                        .select('giocatori!inner(nome, voto)')
-                        .eq('partita_id', p.id);
-                    
-                    let migliore = '';
-                    if (premi && premi.length > 0) {
-                        migliore = `<small>⭐ Migliore: ${premi[0].giocatori.nome} (${premi[0].giocatori.voto})</small>`;
-                    }
-                    
-                    html += `<div class="partita">
-                        <strong>${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome}</strong><br>
-                        <span style="font-size: 1.2rem; font-weight: bold; color: #f97316">${p.set_casa} - ${p.set_ospite}</span><br>
-                        <small>${data}</small>
-                        ${migliore}
-                    </div>`;
+                if (error) {
+                    console.error('Errore fetch partite:', error);
+                    listaPartiteDiv.innerHTML = '<p style="color: #dc3545;">Errore nel caricamento partite</p>';
+                    return;
                 }
+
+                if (!partite || partite.length === 0) {
+                    listaPartiteDiv.innerHTML = '<p style="color: #64748b;">Nessuna partita registrata</p>';
+                    return;
+                }
+
+                let html = '';
+                partite.forEach(p => {
+                    const data = new Date(p.data).toLocaleDateString('it-IT', { 
+                        day: '2-digit', 
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    // Recupera il primo premio (dovrebbe essere uno solo)
+                    const premio = p.premi?.[0];
+                    const mvp = premio?.giocatori;
+
+                    html += `<div class="partita-item">
+                        <strong>${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome}</strong>
+                        <div class="partita-risultato">${p.set_casa} - ${p.set_ospite}</div>
+                        <div class="partita-data">📅 ${data}</div>
+                        ${mvp ? `<div class="partita-mvp">⭐ MVP: ${mvp.nome} <span class="badge">${mvp.voto}</span></div>` : ''}
+                    </div>`;
+                });
                 listaPartiteDiv.innerHTML = html;
+            } catch (e) {
+                console.error('Eccezione fetchPartite:', e);
+                listaPartiteDiv.innerHTML = '<p style="color: #dc3545;">Errore imprevisto</p>';
             }
         }
 
