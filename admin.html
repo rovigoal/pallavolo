@@ -114,6 +114,12 @@
             background: #b91c1c;
         }
 
+        .btn-small {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
         ul {
             list-style: none;
             margin-top: 1rem;
@@ -298,7 +304,7 @@
         }
 
         async function caricaGiocatori() {
-            const { data } = await supabaseClient.from('giocatori').select('id, nome, voto, squadra_id');
+            const { data } = await supabaseClient.from('giocatori').select('id, nome, voto_totale, partite_giocate, squadra_id');
             giocatori = data || [];
         }
 
@@ -353,7 +359,8 @@
             const select = document.getElementById('migliorGiocatore');
             select.innerHTML = '<option value="">Miglior giocatore</option>';
             filtrati.forEach(g => {
-                select.innerHTML += `<option value="${g.id}">${g.nome} (voto: ${g.voto})</option>`;
+                const media = g.partite_giocate > 0 ? (g.voto_totale / g.partite_giocate).toFixed(1) : 0;
+                select.innerHTML += `<option value="${g.id}">${g.nome} (media: ${media})</option>`;
             });
         }
 
@@ -387,7 +394,12 @@
                 return;
             }
             try {
-                await supabaseClient.from('giocatori').insert({ nome, squadra_id: squadraId });
+                await supabaseClient.from('giocatori').insert({ 
+                    nome, 
+                    squadra_id: squadraId,
+                    voto_totale: 0,
+                    partite_giocate: 0
+                });
                 document.getElementById('nomeGiocatore').value = '';
                 await caricaGiocatori();
                 await aggiornaListe();
@@ -459,10 +471,23 @@
                     });
                 if (errPremio) throw errPremio;
 
-                // 3. Aggiorna voto giocatore
+                // 3. Aggiorna voto totale del giocatore
+                const { data: giocatore, error: errGiocatore } = await supabaseClient
+                    .from('giocatori')
+                    .select('voto_totale, partite_giocate')
+                    .eq('id', migliorId)
+                    .single();
+                if (errGiocatore) throw errGiocatore;
+
+                const nuovoVotoTotale = (giocatore.voto_totale || 0) + votoMigliore;
+                const nuovePartiteGiocate = (giocatore.partite_giocate || 0) + 1;
+
                 const { error: errVoto } = await supabaseClient
                     .from('giocatori')
-                    .update({ voto: votoMigliore })
+                    .update({ 
+                        voto_totale: nuovoVotoTotale,
+                        partite_giocate: nuovePartiteGiocate
+                    })
                     .eq('id', migliorId);
                 if (errVoto) throw errVoto;
 
@@ -512,7 +537,7 @@
             (data || []).forEach(s => {
                 html += `<li>
                     <span><strong>${s.nome}</strong> (Punti: ${s.punti})</span>
-                    <button class="btn-danger" onclick="eliminaSquadra('${s.id}')">Elimina</button>
+                    <button class="btn-danger btn-small" onclick="eliminaSquadra('${s.id}')">Elimina</button>
                 </li>`;
             });
             document.getElementById('listaSquadre').innerHTML = html;
@@ -521,13 +546,14 @@
         async function aggiornaListaGiocatori() {
             const { data } = await supabaseClient
                 .from('giocatori')
-                .select('id, nome, voto, squadre!inner(nome)')
-                .order('voto', { ascending: false });
+                .select('id, nome, voto_totale, partite_giocate, squadre!inner(nome)')
+                .order('voto_totale', { ascending: false });
             let html = '';
             (data || []).forEach(g => {
+                const media = g.partite_giocate > 0 ? (g.voto_totale / g.partite_giocate).toFixed(1) : 0;
                 html += `<li>
-                    <span><strong>${g.nome}</strong> - Voto: ${g.voto} (${g.squadre.nome})</span>
-                    <button class="btn-danger" onclick="eliminaGiocatore('${g.id}')">Elimina</button>
+                    <span><strong>${g.nome}</strong> - Totale: ${g.voto_totale} (media: ${media}) - ${g.squadre.nome}</span>
+                    <button class="btn-danger btn-small" onclick="eliminaGiocatore('${g.id}')">Elimina</button>
                 </li>`;
             });
             document.getElementById('listaGiocatori').innerHTML = html;
@@ -542,7 +568,7 @@
             (data || []).forEach(p => {
                 html += `<li>
                     <span><strong>${p.squadre_casa_id.nome} vs ${p.squadre_ospite_id.nome}</strong> (${p.set_casa}-${p.set_ospite})</span>
-                    <button class="btn-danger" onclick="eliminaPartita('${p.id}')">Elimina</button>
+                    <button class="btn-danger btn-small" onclick="eliminaPartita('${p.id}')">Elimina</button>
                 </li>`;
             });
             document.getElementById('listaPartite').innerHTML = html;
