@@ -295,7 +295,7 @@
         let paginaCorrente = 0;
         const partitePerPagina = 3;
 
-        // ---------- CLASSIFICA GIOCATORI (punteggio totale) ----------
+        // ---------- CLASSIFICA GIOCATORI ----------
         function caricaGiocatori() {
             supabaseClient
                 .channel('giocatori-channel')
@@ -360,11 +360,12 @@
             tabellaSquadre.innerHTML = html;
         }
 
-        // ---------- ULTIME PARTITE con paginazione ----------
+        // ---------- ULTIME PARTITE ----------
         function caricaPartite() {
             supabaseClient
                 .channel('partite-channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'partite' }, () => {
+                    console.log('Cambiamento in partite, ricarico...');
                     fetchTuttePartite();
                 })
                 .subscribe();
@@ -373,6 +374,7 @@
 
         async function fetchTuttePartite() {
             try {
+                console.log('Fetch partite...');
                 const { data: partite, error } = await supabaseClient
                     .from('partite')
                     .select(`
@@ -381,8 +383,7 @@
                         set_ospite,
                         data,
                         squadre!squadra_casa_id (nome),
-                        squadre!squadra_ospite_id (nome),
-                        premi ( giocatore_id )
+                        squadre!squadra_ospite_id (nome)
                     `)
                     .order('data', { ascending: false });
 
@@ -391,15 +392,21 @@
                     return;
                 }
 
-                // Per ogni partita, recupera i dettagli dell'MVP
+                console.log('Partite trovate:', partite?.length);
+
+                // Recupera MVP per ogni partita
                 for (let p of partite) {
-                    if (p.premi && p.premi.length > 0) {
+                    const { data: premi } = await supabaseClient
+                        .from('premi')
+                        .select('giocatore_id')
+                        .eq('partita_id', p.id);
+                    
+                    if (premi && premi.length > 0) {
                         const { data: giocatore } = await supabaseClient
                             .from('giocatori')
-                            .select('nome, punteggio_totale')
-                            .eq('id', p.premi[0].giocatore_id)
+                            .select('nome')
+                            .eq('id', premi[0].giocatore_id)
                             .single();
-                        
                         if (giocatore) {
                             p.mvp_nome = giocatore.nome;
                         }
