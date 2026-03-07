@@ -3,6 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>ROVIGOL/PALLAVOLO - Cestino</title>
+    <style>
+        /* stili invariati (come fornito in precedenza) */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Segoe UI', sans-serif; min-height:100vh; background:linear-gradient(145deg,#0b2b40 0%,#1e4b5e 100%); padding:20px; position:relative; }
+        .volley-bg { position:fixed; width:100%; height:100%; top:0; left:0; z-index:0; }
+        .ball { position:absolute; width:80px; height:80px; background:#f9c74f; border-radius:50%; opacity:0.2; animation:float 15s infinite ease-in-out; }
+        .ball::after { content:""; position:absolute; top:50%; left:50%; width:100%; height:100%; background:radial-gradient(circle at 30% 30%, white, #f1b24a 70%); border-radius:50%; transform:translate(-50%,-50%); }
+        .ball::before { content:""; position:absolute; top:0; left:50%; width:4px; height:100%; background:#333; transform:translateX(-50%) rotate(30deg); border-radius:2px; }
+        .ball:nth-child(1) { top:10%; left:5%; width:120px; height:120px; animation-delay:0s; }
+        .ball:nth-child(2) { bottom:15%; right:8%; width:180px; height:180px; animation-delay:2s; }
+        .ball:nth-child(3) { top:40%; right:20%; width:90px; height:90px; animation-delay:4s; }
+        .ball:nth-child(4) { bottom:30%; left:15%; width:150px; height:150px; animation-delay:1s; }
+        .ball:nth-child(5) { top:70%; left:40%; width:100px; height:100px; animation-delay:3s; }
+        @keyframes float { 0% { transform:translateY(0px) rotate(0deg); } 50% { transform:translateY(-30px) rotate(180deg); } 100% { transform:translateY(0px) rotate(360deg); } }
+        .container { position:relative; z-index:10; backdrop-filter:blur(8px); background:rgba(255,255,255,0.1); border-radius:40px; padding:40px 50px; border:1px solid rgba(255,255,255,0.2); box-shadow:0 20px 40px rgba(0,0,0,0.3); color:white; max-width:1200px; margin:0 auto; }
+        h1 { text-align:center; font-size:2.5rem; margin-bottom:40px; background:linear-gradient(135deg,#fff,#ffe5b4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        h2 { color:#f9c74f; margin:30px 0 15px; font-size:2rem; border-bottom:2px solid rgba(249,199,79,0.3); padding-bottom:5px; }
+        .table-wrapper { overflow-x:auto; background:rgba(0,0,0,0.2); border-radius:30px; padding:20px; margin-bottom:30px; }
+        table { width:100%; border-collapse:collapse; color:white; }
+        th { background:rgba(249,199,79,0.3); padding:12px; font-weight:600; text-transform:uppercase; }
+        td { padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); text-align:center; }
+        .btn-small { background:#e63946; border:none; padding:6px 15px; font-size:0.9rem; font-weight:bold; color:white; border-radius:40px; cursor:pointer; box-shadow:0 3px 0 #a12733; transition:0.2s; }
+        .btn-small:hover { transform:translateY(-2px); box-shadow:0 5px 0 #a12733; background:#ff5a6e; }
+        .btn-small:active { transform:translateY(3px); box-shadow:0 1px 0 #a12733; }
+        .back-link { display:block; text-align:center; margin-top:30px; color:rgba(255,255,255,0.7); text-decoration:none; font-size:1.1rem; }
+        .back-link:hover { color:white; text-decoration:underline; }
+        .message { margin-top:20px; padding:10px; border-radius:30px; text-align:center; font-weight:bold; background:rgba(0,0,0,0.3); }
+        @media screen and (max-width:768px) {
+            body { padding:10px; }
+            .container { padding:20px 15px !important; width:100% !important; max-width:100% !important; margin:10px auto !important; }
+            h1 { font-size:2rem !important; margin-bottom:20px; }
+            h2 { font-size:1.5rem; margin:20px 0 10px; }
+            .table-wrapper { padding:10px; }
+            table { min-width:600px; }
+            th, td { padding:8px 5px; font-size:0.9rem; }
+            .btn-small { padding:5px 10px; font-size:0.8rem; }
+            .ball { opacity:0.1; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="volley-bg">
+        <div class="ball"></div><div class="ball"></div><div class="ball"></div><div class="ball"></div><div class="ball"></div>
+    </div>
+    <div class="container">
+        <h1>🗑️ ROVIGOL/PALLAVOLO - CESTINO</h1>
+        <p style="text-align:center; margin-bottom:20px;">Qui puoi eliminare definitivamente squadre, giocatori o partite.</p>
+
+        <h2>🏐 Squadre</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>ID</th><th>Nome</th><th>Azione</th></tr></thead>
+                <tbody id="tabellaSquadre"></tbody>
+            </table>
+        </div>
+
+        <h2>🌟 Giocatori</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>ID</th><th>Nome</th><th>Cognome</th><th>Squadra</th><th>Azione</th></tr></thead>
+                <tbody id="tabellaGiocatori"></tbody>
+            </table>
+        </div>
+
+        <h2>📋 Partite</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>ID</th><th>Casa</th><th>Ospite</th><th>Risultato</th><th>Data</th><th>Azione</th></tr></thead>
+                <tbody id="tabellaPartite"></tbody>
+            </table>
+        </div>
+
+        <a href="admin_panel.html" class="back-link">← Torna al pannello admin</a>
+        <div id="messaggio" class="message" style="display:none;"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://ojzdxhukqhnrobpxxvlh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qemR4aHVrcWhucm9icHh4dmxoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Nzc5NDIsImV4cCI6MjA4ODM1Mzk0Mn0.N47R33pZ54dyoLyLqZfjfBkXyRYgWal0y-NwJKjM0XI';
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function showMessage(text, isSuccess) {
+            const msg = document.getElementById('messaggio');
+            msg.style.display = 'block';
+            msg.textContent = text;
+            msg.style.backgroundColor = isSuccess ? 'rgba(76,175,80,0.3)' : 'rgba(244,67,54,0.3)';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
+
+        async function loadSquadre() {
+            const { data, error } = await supabaseClient.from('squadre').select('*').order('id');
+            if (error) return console.error(error);
+            const tbody = document.getElementById('tabellaSquadre');
+            tbody.innerHTML = '';
+            data.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${s.id}</td>
+                    <td>${s.nome}</td>
+                    <td><button class="btn-small" onclick="eliminaSquadra(${s.id})">Elimina</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function loadGiocatori() {
+            const { data, error } = await supabaseClient
+                .from('giocatori')
+                .select('*, squadre(nome)')
+                .order('id');
+            if (error) return console.error(error);
+            const tbody = document.getElementById('tabellaGiocatori');
+            tbody.innerHTML = '';
+            data.forEach(g => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${g.id}</td>
+                    <td>${g.nome}</td>
+                    <td>${g.cognome}</td>
+                    <td>${g.squadre?.nome || '—'}</td>
+                    <td><button class="btn-small" onclick="eliminaGiocatore(${g.id})">Elimina</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function loadPartite() {
+            const { data, error } = await supabaseClient
+                .from('partite')
+                .select(`
+                    id,
+                    set_casa,
+                    set_ospite,
+                    data,
+                    squadra_casa_id,
+                    squadra_ospite_id
+                `)
+                .order('id');
+            
+            if (error) {
+                console.error('Errore caricamento partite:', error);
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                document.getElementById('tabellaPartite').innerHTML = '';
+                return;
+            }
+
+            const squadraIds = new Set();
+            data.forEach(p => {
+                squadraIds.add(p.squadra_casa_id);
+                squadraIds.add(p.squadra_ospite_id);
+            });
+
+            const { data: squadre, error: errSquadre } = await supabaseClient
+                .from('squadre')
+                .select('id, nome')
+                .in('id', Array.from(squadraIds));
+
+            if (errSquadre) {
+                console.error('Errore caricamento squadre:', errSquadre);
+                return;
+            }
+
+            const squadreMap = {};
+            if (squadre) {
+                squadre.forEach(s => squadreMap[s.id] = s.nome);
+            }
+
+            const tbody = document.getElementById('tabellaPartite');
+            tbody.innerHTML = '';
+
+            data.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${p.id}</td>
+                    <td>${squadreMap[p.squadra_casa_id] || '?'}</td>
+                    <td>${squadreMap[p.squadra_ospite_id] || '?'}</td>
+                    <td>${p.set_casa} - ${p.set_ospite}</td>
+                    <td>${p.data}</td>
+                    <td><button class="btn-small" onclick="eliminaPartita(${p.id})">Elimina</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.eliminaSquadra = async function(id) {
+            if (!confirm('ATTENZIONE: Eliminare questa squadra cancellerà anche tutti i suoi giocatori e le partite associate. Continuare?')) return;
+            const { error } = await supabaseClient.from('squadre').delete().eq('id', id);
+            if (error) {
+                showMessage('Errore: ' + error.message, false);
+            } else {
+                showMessage('Squadra eliminata.', true);
+                loadSquadre();
+                loadGiocatori();
+                loadPartite();
+            }
+        };
+
+        window.eliminaGiocatore = async function(id) {
+            if (!confirm('Eliminare questo giocatore? Non verranno cancellate le partite in cui è stato miglior giocatore (il campo verrà reso nullo).')) return;
+            const { error } = await supabaseClient.from('giocatori').delete().eq('id', id);
+            if (error) {
+                showMessage('Errore: ' + error.message, false);
+            } else {
+                showMessage('Giocatore eliminato.', true);
+                loadGiocatori();
+            }
+        };
+
+        window.eliminaPartita = async function(id) {
+            if (!confirm('Eliminare questa partita? I punti verranno rimossi dalle classifiche.')) return;
+            const { error } = await supabaseClient.from('partite').delete().eq('id', id);
+            if (error) {
+                showMessage('Errore: ' + error.message, false);
+            } else {
+                showMessage('Partita eliminata.', true);
+                loadPartite();
+            }
+        };
+
+        window.onload = () => {
+            loadSquadre();
+            loadGiocatori();
+            loadPartite();
+        };
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Admin - Cestino</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
