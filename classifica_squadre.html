@@ -113,31 +113,13 @@
             color:white;
             text-decoration:underline;
         }
-        /* Responsive */
         @media screen and (max-width:768px) {
-            body {
-                padding:10px;
-            }
-            .container {
-                padding:20px 15px !important;
-                width:100% !important;
-                max-width:100% !important;
-                margin:10px auto !important;
-            }
-            h1 {
-                font-size:2rem !important;
-                margin-bottom:20px;
-            }
-            table {
-                min-width:600px; /* scroll orizzontale */
-            }
-            th, td {
-                padding:10px 5px;
-                font-size:0.9rem;
-            }
-            .ball {
-                opacity:0.1;
-            }
+            body { padding:10px; }
+            .container { padding:20px 15px !important; width:100% !important; max-width:100% !important; margin:10px auto !important; }
+            h1 { font-size:2rem !important; margin-bottom:20px; }
+            table { min-width:600px; }
+            th, td { padding:10px 5px; font-size:0.9rem; }
+            .ball { opacity:0.1; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -165,46 +147,86 @@
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function loadClassifica() {
+            // Recupera tutte le squadre
             const { data: squadre, error: errS } = await supabaseClient.from('squadre').select('id, nome');
-            if (errS) return console.error(errS);
+            if (errS) {
+                console.error('Errore caricamento squadre:', errS);
+                return;
+            }
+            
+            // Recupera tutte le partite
             const { data: partite, error: errP } = await supabaseClient.from('partite').select('squadra_casa_id, squadra_ospite_id, set_casa, set_ospite');
-            if (errP) return console.error(errP);
+            if (errP) {
+                console.error('Errore caricamento partite:', errP);
+                return;
+            }
 
+            // Inizializza le statistiche per ogni squadra
             const stats = {};
             squadre.forEach(s => {
-                stats[s.id] = { nome: s.nome, giocate:0, vinte:0, perse:0, punti:0 };
+                stats[s.id] = { 
+                    nome: s.nome, 
+                    giocate: 0, 
+                    vinte: 0, 
+                    perse: 0, 
+                    punti: 0 
+                };
             });
 
+            // Calcola le statistiche in base alle partite
             partite.forEach(p => {
                 const casa = p.squadra_casa_id;
                 const ospite = p.squadra_ospite_id;
                 const setC = p.set_casa;
                 const setO = p.set_ospite;
 
-                stats[casa].giocate++;
-                stats[ospite].giocate++;
+                // Incrementa partite giocate
+                if (stats[casa]) stats[casa].giocate++;
+                if (stats[ospite]) stats[ospite].giocate++;
 
-                if (setC > setO) {
-                    stats[casa].vinte++;
-                    stats[ospite].perse++;
-                    if (setC === 3 && setO === 0) stats[casa].punti += 3;
-                    else if (setC === 3 && setO === 1) stats[casa].punti += 3;
-                    else if (setC === 3 && setO === 2) { stats[casa].punti += 2; stats[ospite].punti += 1; }
-                } else {
-                    stats[ospite].vinte++;
-                    stats[casa].perse++;
-                    if (setO === 3 && setC === 0) stats[ospite].punti += 3;
-                    else if (setO === 3 && setC === 1) stats[ospite].punti += 3;
-                    else if (setO === 3 && setC === 2) { stats[ospite].punti += 2; stats[casa].punti += 1; }
+                if (setC > setO) { // Vince la squadra di casa
+                    if (stats[casa]) stats[casa].vinte++;
+                    if (stats[ospite]) stats[ospite].perse++;
+                    
+                    if (setC === 3 && setO === 0) {
+                        if (stats[casa]) stats[casa].punti += 3;
+                    } else if (setC === 3 && setO === 1) {
+                        if (stats[casa]) stats[casa].punti += 3;
+                    } else if (setC === 3 && setO === 2) { 
+                        if (stats[casa]) stats[casa].punti += 2;
+                        if (stats[ospite]) stats[ospite].punti += 1;
+                    }
+                } else { // Vince la squadra ospite
+                    if (stats[ospite]) stats[ospite].vinte++;
+                    if (stats[casa]) stats[casa].perse++;
+                    
+                    if (setO === 3 && setC === 0) {
+                        if (stats[ospite]) stats[ospite].punti += 3;
+                    } else if (setO === 3 && setC === 1) {
+                        if (stats[ospite]) stats[ospite].punti += 3;
+                    } else if (setO === 3 && setC === 2) { 
+                        if (stats[ospite]) stats[ospite].punti += 2;
+                        if (stats[casa]) stats[casa].punti += 1;
+                    }
                 }
             });
 
-            const classifica = Object.values(stats).sort((a,b) => b.punti - a.punti);
+            // Converti l'oggetto in array e ordina per punti (decrescente)
+            const classifica = Object.values(stats).sort((a, b) => b.punti - a.punti);
+
+            // Popola la tabella
             const tbody = document.getElementById('classificaBody');
             tbody.innerHTML = '';
             classifica.forEach((s, idx) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${idx+1}</td><td>${s.nome}</td><td>${s.giocate}</td><td>${s.vinte}</td><td>${s.perse}</td><td>${s.punti}</td>`;
+                tr.innerHTML = `
+                    <td>${idx + 1}</td>
+                    <td>${s.nome}</td>
+                    <td>${s.giocate}</td>
+                    <td>${s.vinte}</td>
+                    <td>${s.perse}</td>
+                    <td>${s.punti}</td>
+                `;
                 tbody.appendChild(tr);
             });
         }
