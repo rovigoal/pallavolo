@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>ROVIGOL/PALLAVOLO - Menu</title>
     <style>
-        /* stili invariati */
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family:'Segoe UI', sans-serif;
@@ -53,7 +52,12 @@
             -webkit-background-clip:text;
             -webkit-text-fill-color:transparent;
         }
-        .button-grid { display:flex; gap:30px; flex-wrap:wrap; justify-content:center; }
+        .button-grid {
+            display:flex;
+            gap:30px;
+            flex-wrap:wrap;
+            justify-content:center;
+        }
         .menu-btn {
             background:#f9c74f;
             border:none;
@@ -78,8 +82,15 @@
             transform:translateY(5px);
             box-shadow:0 3px 0 #b87c2c,0 8px 15px rgba(0,0,0,0.3);
         }
-        .admin-btn { background:#e63946; box-shadow:0 8px 0 #a12733; color:white; }
-        .admin-btn:hover { background:#ff5a6e; box-shadow:0 11px 0 #a12733; }
+        .admin-btn {
+            background:#e63946;
+            box-shadow:0 8px 0 #a12733;
+            color:white;
+        }
+        .admin-btn:hover {
+            background:#ff5a6e;
+            box-shadow:0 11px 0 #a12733;
+        }
         .court-lines {
             position:absolute;
             bottom:0;
@@ -139,9 +150,10 @@
         <div class="button-grid">
             <button class="menu-btn" onclick="window.location.href='classifica_squadre.html'">🏐 CLASSIFICA SQUADRE</button>
             <button class="menu-btn" onclick="window.location.href='classifica_giocatori.html'">🌟 CLASSIFICA GIOCATORI</button>
+            <button class="menu-btn" onclick="window.location.href='locandina.html'">📋 LOCANDINA</button>
             <button class="menu-btn admin-btn" onclick="window.location.href='admin_login.html'">🔧 ADMIN</button>
         </div>
-        <button class="back-btn" onclick="window.location.href='locandina.html'">← Torna alla locandina</button>
+        <button class="back-btn" onclick="window.location.href='index.html'">← Torna alla home</button>
     </div>
 </body>
 </html>
