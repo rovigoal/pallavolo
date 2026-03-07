@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Admin - Inserimento Partite</title>
     <style>
+        /* STILI IDENTICI A PRIMA - INVARIATI */
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family:'Segoe UI', sans-serif;
@@ -198,51 +199,19 @@
             color:white;
             text-decoration:underline;
         }
-        /* Responsive */
         @media screen and (max-width:768px) {
-            body {
-                padding:10px;
-            }
-            .container {
-                padding:20px 15px !important;
-                width:100% !important;
-                max-width:100% !important;
-                margin:10px auto !important;
-            }
-            h1 {
-                font-size:2rem !important;
-                margin-bottom:20px;
-            }
-            .form-card {
-                padding:15px;
-            }
-            .form-row {
-                flex-direction:column;
-                gap:15px;
-            }
-            .form-group {
-                width:100%;
-            }
-            .btn {
-                padding:10px 20px !important;
-                font-size:1rem !important;
-            }
-            input, select {
-                font-size:16px !important;
-            }
-            .table-wrapper {
-                padding:10px;
-            }
-            table {
-                min-width:600px; /* scroll orizzontale */
-            }
-            th, td {
-                padding:8px 5px;
-                font-size:0.9rem;
-            }
-            .ball {
-                opacity:0.1;
-            }
+            body { padding:10px; }
+            .container { padding:20px 15px !important; width:100% !important; max-width:100% !important; margin:10px auto !important; }
+            h1 { font-size:2rem !important; margin-bottom:20px; }
+            .form-card { padding:15px; }
+            .form-row { flex-direction:column; gap:15px; }
+            .form-group { width:100%; }
+            .btn { padding:10px 20px !important; font-size:1rem !important; }
+            input, select { font-size:16px !important; }
+            .table-wrapper { padding:10px; }
+            table { min-width:600px; }
+            th, td { padding:8px 5px; font-size:0.9rem; }
+            .ball { opacity:0.1; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -346,9 +315,9 @@
         async function loadGiocatori() {
             const { data, error } = await supabaseClient
                 .from('giocatori')
-                .select('id, nome, cognome, squadre!inner(nome)')
+                .select('id, nome, cognome, squadra_id, squadre!inner(nome)')
                 .order('cognome');
-            if (error) return console.error(error);
+            if (error) return console.error('Errore giocatori:', error);
             const select = document.getElementById('miglior_giocatore');
             select.innerHTML = '<option value="">Seleziona</option>';
             data.forEach(g => {
@@ -360,26 +329,70 @@
         }
 
         async function loadPartite() {
+            // Versione corretta senza sintassi problematica
             const { data, error } = await supabaseClient
                 .from('partite')
                 .select(`
-                    id, set_casa, set_ospite, data, punti_miglior_giocatore,
-                    squadre_casa!squadra_casa_id (nome),
-                    squadre_ospite!squadra_ospite_id (nome),
-                    giocatori (nome, cognome)
+                    id,
+                    set_casa,
+                    set_ospite,
+                    data,
+                    punti_miglior_giocatore,
+                    squadra_casa_id,
+                    squadra_ospite_id,
+                    miglior_giocatore_id
                 `)
                 .order('data', { ascending: false });
-            if (error) return console.error(error);
+            
+            if (error) {
+                console.error('Errore caricamento partite:', error);
+                return;
+            }
+
+            // Recupera i nomi delle squadre separatamente
+            const squadraIds = new Set();
+            data.forEach(p => {
+                squadraIds.add(p.squadra_casa_id);
+                squadraIds.add(p.squadra_ospite_id);
+            });
+
+            const { data: squadre, error: errSquadre } = await supabaseClient
+                .from('squadre')
+                .select('id, nome')
+                .in('id', Array.from(squadraIds));
+
+            if (errSquadre) {
+                console.error('Errore caricamento squadre:', errSquadre);
+                return;
+            }
+
+            // Mappa per trovare i nomi rapidamente
+            const squadreMap = {};
+            squadre.forEach(s => squadreMap[s.id] = s.nome);
+
+            // Recupera i nomi dei giocatori
+            const giocatoreIds = data.map(p => p.miglior_giocatore_id).filter(id => id);
+            const { data: giocatori, error: errGiocatori } = await supabaseClient
+                .from('giocatori')
+                .select('id, nome, cognome')
+                .in('id', giocatoreIds);
+
+            const giocatoriMap = {};
+            if (giocatori) {
+                giocatori.forEach(g => giocatoriMap[g.id] = `${g.nome} ${g.cognome}`);
+            }
+
             const tbody = document.getElementById('listaPartite');
             tbody.innerHTML = '';
+
             data.forEach(p => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${p.squadre_casa.nome}</td>
-                    <td>${p.squadre_ospite.nome}</td>
+                    <td>${squadreMap[p.squadra_casa_id] || '?'}</td>
+                    <td>${squadreMap[p.squadra_ospite_id] || '?'}</td>
                     <td>${p.set_casa} - ${p.set_ospite}</td>
                     <td>${p.data}</td>
-                    <td>${p.giocatori ? `${p.giocatori.nome} ${p.giocatori.cognome}` : '-'}</td>
+                    <td>${giocatoriMap[p.miglior_giocatore_id] || '-'}</td>
                     <td>${p.punti_miglior_giocatore ?? '-'}</td>
                     <td><button class="btn-small btn-danger" onclick="cancellaPartita(${p.id})">Cancella</button></td>
                 `;
@@ -405,19 +418,26 @@
             const data = document.getElementById('data').value;
             const mg = document.getElementById('miglior_giocatore').value;
             const punti = parseInt(document.getElementById('punti_giocatore').value);
+            
             if (!casa || !ospite || !risultato || !data || !mg || isNaN(punti)) 
                 return showMessage('msgSalva', 'Compila tutti i campi', false);
             if (casa === ospite) return showMessage('msgSalva', 'Squadre diverse', false);
+            
             const [set_casa, set_ospite] = risultato.split('-').map(Number);
             const { error } = await supabaseClient.from('partite').insert([{
                 squadra_casa_id: casa,
                 squadra_ospite_id: ospite,
-                set_casa, set_ospite, data,
+                set_casa, 
+                set_ospite, 
+                data,
                 miglior_giocatore_id: mg,
                 punti_miglior_giocatore: punti
             }]);
-            if (error) showMessage('msgSalva', 'Errore: ' + error.message, false);
-            else {
+            
+            if (error) {
+                showMessage('msgSalva', 'Errore: ' + error.message, false);
+                console.error(error);
+            } else {
                 showMessage('msgSalva', 'Partita inserita!', true);
                 document.getElementById('formPartita').reset();
                 loadPartite();
