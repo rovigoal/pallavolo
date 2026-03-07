@@ -154,42 +154,16 @@
             font-weight:bold;
             background:rgba(0,0,0,0.3);
         }
-        /* Responsive */
         @media screen and (max-width:768px) {
-            body {
-                padding:10px;
-            }
-            .container {
-                padding:20px 15px !important;
-                width:100% !important;
-                max-width:100% !important;
-                margin:10px auto !important;
-            }
-            h1 {
-                font-size:2rem !important;
-                margin-bottom:20px;
-            }
-            h2 {
-                font-size:1.5rem;
-                margin:20px 0 10px;
-            }
-            .table-wrapper {
-                padding:10px;
-            }
-            table {
-                min-width:600px; /* scroll orizzontale */
-            }
-            th, td {
-                padding:8px 5px;
-                font-size:0.9rem;
-            }
-            .btn-small {
-                padding:5px 10px;
-                font-size:0.8rem;
-            }
-            .ball {
-                opacity:0.1;
-            }
+            body { padding:10px; }
+            .container { padding:20px 15px !important; width:100% !important; max-width:100% !important; margin:10px auto !important; }
+            h1 { font-size:2rem !important; margin-bottom:20px; }
+            h2 { font-size:1.5rem; margin:20px 0 10px; }
+            .table-wrapper { padding:10px; }
+            table { min-width:600px; }
+            th, td { padding:8px 5px; font-size:0.9rem; }
+            .btn-small { padding:5px 10px; font-size:0.8rem; }
+            .ball { opacity:0.1; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -282,23 +256,62 @@
         }
 
         async function loadPartite() {
+            // Prima prendiamo i dati base delle partite
             const { data, error } = await supabaseClient
                 .from('partite')
                 .select(`
-                    id, set_casa, set_ospite, data,
-                    squadre_casa!squadra_casa_id (nome),
-                    squadre_ospite!squadra_ospite_id (nome)
+                    id,
+                    set_casa,
+                    set_ospite,
+                    data,
+                    squadra_casa_id,
+                    squadra_ospite_id
                 `)
                 .order('id');
-            if (error) return console.error(error);
+            
+            if (error) {
+                console.error('Errore caricamento partite:', error);
+                return;
+            }
+
+            // Se non ci sono partite, svuota la tabella
+            if (!data || data.length === 0) {
+                document.getElementById('tabellaPartite').innerHTML = '';
+                return;
+            }
+
+            // Recupera i nomi delle squadre separatamente
+            const squadraIds = new Set();
+            data.forEach(p => {
+                squadraIds.add(p.squadra_casa_id);
+                squadraIds.add(p.squadra_ospite_id);
+            });
+
+            const { data: squadre, error: errSquadre } = await supabaseClient
+                .from('squadre')
+                .select('id, nome')
+                .in('id', Array.from(squadraIds));
+
+            if (errSquadre) {
+                console.error('Errore caricamento squadre:', errSquadre);
+                return;
+            }
+
+            // Crea una mappa per trovare i nomi rapidamente
+            const squadreMap = {};
+            if (squadre) {
+                squadre.forEach(s => squadreMap[s.id] = s.nome);
+            }
+
             const tbody = document.getElementById('tabellaPartite');
             tbody.innerHTML = '';
+
             data.forEach(p => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${p.id}</td>
-                    <td>${p.squadre_casa.nome}</td>
-                    <td>${p.squadre_ospite.nome}</td>
+                    <td>${squadreMap[p.squadra_casa_id] || '?'}</td>
+                    <td>${squadreMap[p.squadra_ospite_id] || '?'}</td>
                     <td>${p.set_casa} - ${p.set_ospite}</td>
                     <td>${p.data}</td>
                     <td><button class="btn-small" onclick="eliminaPartita(${p.id})">Elimina</button></td>
