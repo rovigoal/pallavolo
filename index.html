@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Volley - Entra nel sito</title>
+    <title>ROVIGOL/PALLAVOLO - Entra</title>
     <style>
+        /* stili invariati */
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family:'Segoe UI', sans-serif;
@@ -136,38 +137,14 @@
             transform:translateX(-50%);
             opacity:0.3;
         }
-        /* Responsive */
         @media screen and (max-width:768px) {
-            body {
-                padding:10px;
-                overflow:auto;
-                height:auto;
-                min-height:100vh;
-            }
-            .content {
-                padding:20px 15px !important;
-                width:100% !important;
-                margin:10px auto !important;
-            }
-            h1 {
-                font-size:2.5rem !important;
-            }
-            .subtitle {
-                font-size:1rem;
-                margin-bottom:20px;
-            }
-            .enter-btn {
-                padding:12px 30px !important;
-                font-size:1.5rem !important;
-                width:100%;
-            }
-            .ball {
-                opacity:0.1;
-                animation-duration:20s;
-            }
-            .court-lines {
-                height:80px;
-            }
+            body { padding:10px; overflow:auto; height:auto; min-height:100vh; }
+            .content { padding:20px 15px !important; width:100% !important; margin:10px auto !important; }
+            h1 { font-size:2.5rem !important; }
+            .subtitle { font-size:1rem; margin-bottom:20px; }
+            .enter-btn { padding:12px 30px !important; font-size:1.5rem !important; width:100%; }
+            .ball { opacity:0.1; animation-duration:20s; }
+            .court-lines { height:80px; }
         }
     </style>
 </head>
@@ -177,13 +154,13 @@
     </div>
     <div class="court-lines"></div>
     <div class="content">
-        <h1>PALLAVOLO</h1>
+        <h1>ROVIGOL/PALLAVOLO</h1>
         <div class="subtitle">Entra nella community</div>
         <button class="enter-btn" id="enterBtn">ENTRA NEL SITO</button>
     </div>
     <script>
         document.getElementById('enterBtn').addEventListener('click', function() {
-            window.location.href = 'menu.html';
+            window.location.href = 'locandina.html';
         });
     </script>
 </body>
