@@ -65,30 +65,51 @@
 <div id="modal" class="modal"><span class="close">&times;</span><img id="modalImg" src=""></div>
 
 <script>
-    const total = 11;           // quante foto hai (1 a 11)
-    const ext = '.jpg';         // estensione (.jpg o .jpeg)
-    const cartella = 'locandina/';
+    (function() {
+        // CONFIGURAZIONE
+        const total = 11;               // quante foto (1 a 11)
+        const ext = '.jpeg';            // estensione corretta
+        const cartella = 'locandina/';  // cartella dove stanno le foto
 
-    const galleryDiv = document.getElementById('gallery');
-    const modal = document.getElementById('modal');
-    const modalImg = document.getElementById('modalImg');
-    const closeSpan = document.querySelector('.close');
+        const gallery = document.getElementById('gallery');
+        const modal = document.getElementById('modal');
+        const modalImg = document.getElementById('modalImg');
+        const closeSpan = document.querySelector('.close');
 
-    for (let i = 1; i <= total; i++) {
-        const imgPath = cartella + i + ext;
-        const thumb = document.createElement('div');
-        thumb.className = 'thumbnail';
-        const img = document.createElement('img');
-        img.src = imgPath;
-        img.alt = 'Foto ' + i;
-        img.onerror = () => { thumb.style.display = 'none'; }; // se non c'è la nasconde
-        thumb.appendChild(img);
-        thumb.onclick = () => { modal.style.display = 'flex'; modalImg.src = imgPath; };
-        galleryDiv.appendChild(thumb);
-    }
+        // Pulisce la galleria (per sicurezza)
+        gallery.innerHTML = '';
 
-    modal.onclick = () => { modal.style.display = 'none'; };
-    closeSpan.onclick = () => { modal.style.display = 'none'; };
+        // Ciclo da 1 a total
+        for (let i = 1; i <= total; i++) {
+            const imgPath = cartella + i + ext;
+            const thumb = document.createElement('div');
+            thumb.className = 'thumbnail';
+            const img = document.createElement('img');
+            img.src = imgPath;
+            img.alt = 'Foto ' + i;
+
+            // Se l'immagine non viene trovata, mostriamo un placeholder (non nascondiamo)
+            img.onerror = function() {
+                this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23333"/%3E%3Ctext x="50" y="55" font-size="14" text-anchor="middle" fill="%23aaa"%3E%3F%3C/text%3E%3C/svg%3E';
+                this.style.objectFit = 'contain';
+            };
+
+            thumb.appendChild(img);
+            thumb.onclick = function() {
+                modal.style.display = 'flex';
+                modalImg.src = imgPath;
+            };
+            gallery.appendChild(thumb);
+        }
+
+        // Chiusura modale
+        function chiudiModale() {
+            modal.style.display = 'none';
+        }
+        modal.onclick = chiudiModale;
+        closeSpan.onclick = chiudiModale;
+        modalImg.onclick = function(e) { e.stopPropagation(); };
+    })();
 </script>
 </body>
 </html>
