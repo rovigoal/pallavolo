@@ -2,20 +2,57 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Test Locandina</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROVIGOL/PALLAVOLO - Locandina</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(145deg, #0b2b40 0%, #1e4b5e 100%);
+            color: white;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.5);
+            border-radius: 30px;
+            padding: 30px;
+        }
+        h1 { text-align: center; }
+        ul { list-style: none; padding: 0; }
+        li { margin: 15px 0; background: rgba(255,255,255,0.1); border-radius: 20px; }
+        a {
+            display: block;
+            padding: 15px 20px;
+            color: #f9c74f;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        a:hover { background: rgba(255,255,255,0.2); border-radius: 20px; }
+        .back { text-align: center; margin-top: 30px; }
+        .back a { background: #f9c74f; color: #0b2b40; display: inline-block; padding: 10px 30px; border-radius: 40px; }
+    </style>
 </head>
 <body>
-    <h1>Test lettura file</h1>
-    <div id="output"></div>
-    <script>
-        fetch('locandina/1.jpeg')
-            .then(res => res.text())
-            .then(text => {
-                document.getElementById('output').innerHTML = `<pre>Contenuto di 1.jpeg:\n${text}</pre>`;
-            })
-            .catch(err => {
-                document.getElementById('output').innerHTML = `Errore: ${err.message}`;
-            });
-    </script>
+<div class="container">
+    <h1>📋 LOCANDINA - SCHEDE ORARI</h1>
+    <ul>
+        <li><a href="locandina/1.jpeg" target="_blank">📄 Scheda 1</a></li>
+        <li><a href="locandina/2.jpeg" target="_blank">📄 Scheda 2</a></li>
+        <li><a href="locandina/3.jpeg" target="_blank">📄 Scheda 3</a></li>
+        <li><a href="locandina/4.jpeg" target="_blank">📄 Scheda 4</a></li>
+        <li><a href="locandina/5.jpeg" target="_blank">📄 Scheda 5</a></li>
+        <li><a href="locandina/6.jpeg" target="_blank">📄 Scheda 6</a></li>
+        <li><a href="locandina/7.jpeg" target="_blank">📄 Scheda 7</a></li>
+        <li><a href="locandina/8.jpeg" target="_blank">📄 Scheda 8</a></li>
+        <li><a href="locandina/9.jpeg" target="_blank">📄 Scheda 9</a></li>
+        <li><a href="locandina/10.jpeg" target="_blank">📄 Scheda 10</a></li>
+        <li><a href="locandina/11.jpeg" target="_blank">📄 Scheda 11</a></li>
+    </ul>
+    <div class="back">
+        <a href="menu.html">← TORNA AL MENU</a>
+    </div>
+</div>
 </body>
 </html>
