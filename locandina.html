@@ -2,133 +2,20 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROVIGOL/PALLAVOLO - Locandina</title>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            font-family:'Segoe UI', sans-serif;
-            min-height:100vh;
-            background:linear-gradient(145deg,#0b2b40 0%,#1e4b5e 100%);
-            padding:20px;
-        }
-        .container {
-            background:rgba(255,255,255,0.1);
-            backdrop-filter:blur(8px);
-            border-radius:40px;
-            padding:30px;
-            max-width:1200px;
-            margin:0 auto;
-            color:white;
-        }
-        h1 { text-align:center; margin-bottom:20px; }
-        .gallery {
-            display:grid;
-            grid-template-columns:repeat(auto-fill, minmax(280px,1fr));
-            gap:20px;
-            margin:30px 0;
-        }
-        .card {
-            background:rgba(0,0,0,0.5);
-            border-radius:24px;
-            padding:16px;
-            cursor:pointer;
-            border:2px solid rgba(255,255,255,0.2);
-            transition:0.2s;
-        }
-        .card:hover { transform:scale(1.02); border-color:#f9c74f; }
-        .card h3 { color:#f9c74f; margin-bottom:10px; }
-        .card pre {
-            white-space:pre-wrap;
-            font-family:monospace;
-            font-size:0.9rem;
-            color:#eee;
-            overflow-x:auto;
-        }
-        .modal {
-            display:none;
-            position:fixed;
-            top:0; left:0;
-            width:100%; height:100%;
-            background:rgba(0,0,0,0.95);
-            z-index:1000;
-            justify-content:center;
-            align-items:center;
-        }
-        .modal-content {
-            background:#0b2b40;
-            padding:30px;
-            border-radius:30px;
-            max-width:90%;
-            max-height:90%;
-            overflow:auto;
-            white-space:pre-wrap;
-            font-family:monospace;
-            color:white;
-            border:2px solid #f9c74f;
-        }
-        .close {
-            position:absolute;
-            top:20px; right:40px;
-            font-size:3rem;
-            color:white;
-            cursor:pointer;
-        }
-        .btn { background:#f9c74f; padding:12px 30px; border-radius:60px; text-decoration:none; color:#0b2b40; display:inline-block; margin-top:20px; }
-        @media (max-width:768px) { .gallery { grid-template-columns:1fr; } }
-    </style>
+    <title>Test Locandina</title>
 </head>
 <body>
-<div class="container">
-    <h1>📋 LOCANDINA - ORARI E SCHEDE</h1>
-    <div id="galleryContainer" class="gallery"></div>
-    <div style="text-align:center"><a href="menu.html" class="btn">← TORNA AL MENU</a></div>
-</div>
-<div id="modal" class="modal"><span class="close">&times;</span><div id="modalText" class="modal-content"></div></div>
-
-<script>
-    const total = 11;
-    const files = [];
-    for(let i=1;i<=total;i++) files.push(`locandina/${i}.jpeg`);
-
-    const gallery = document.getElementById('galleryContainer');
-    const modal = document.getElementById('modal');
-    const modalText = document.getElementById('modalText');
-    const closeSpan = document.querySelector('.close');
-
-    async function loadText(fileUrl, index) {
-        try {
-            const res = await fetch(fileUrl);
-            if(!res.ok) throw new Error();
-            const text = await res.text();
-            const card = document.createElement('div');
-            card.className = 'card';
-            let preview = text.substring(0, 150);
-            if(text.length > 150) preview += '...';
-            card.innerHTML = `<h3>📄 Scheda ${index}</h3><pre>${escapeHtml(preview)}</pre>`;
-            card.onclick = () => { modalText.innerText = text; modal.style.display = 'flex'; };
-            gallery.appendChild(card);
-        } catch(e) {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `<h3>⚠️ Scheda ${index}</h3><pre>File non trovato o vuoto</pre>`;
-            gallery.appendChild(card);
-        }
-    }
-
-    function escapeHtml(str) {
-        return str.replace(/[&<>]/g, function(m) {
-            if(m === '&') return '&amp;';
-            if(m === '<') return '&lt;';
-            if(m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    for(let i=0;i<files.length;i++) loadText(files[i], i+1);
-
-    closeSpan.onclick = () => modal.style.display = 'none';
-    modal.onclick = (e) => { if(e.target === modal) modal.style.display = 'none'; };
-</script>
+    <h1>Test lettura file</h1>
+    <div id="output"></div>
+    <script>
+        fetch('locandina/1.jpeg')
+            .then(res => res.text())
+            .then(text => {
+                document.getElementById('output').innerHTML = `<pre>Contenuto di 1.jpeg:\n${text}</pre>`;
+            })
+            .catch(err => {
+                document.getElementById('output').innerHTML = `Errore: ${err.message}`;
+            });
+    </script>
 </body>
 </html>
